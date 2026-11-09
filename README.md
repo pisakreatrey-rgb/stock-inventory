@@ -2,6 +2,12 @@
 
 គម្រោងមាន ៣ ផ្នែក ដែលប្រើប្រធានបទតែមួយ៖ **ការគ្រប់គ្រងស្តុកចូល–ចេញ របស់ «ហាង ស្តុកល្អ»**។
 
+| | |
+|---|---|
+| 🌐 Live URL | https://stock-inventory-part3-website.vercel.app/ |
+| 💻 Git repo | https://github.com/pisakreatrey-rgb/stock-inventory |
+| 🗄️ Backend | Google Sheet + Apps Script Web App (URL ក្នុង `part3-website/js/config.js`) |
+
 ```
 ├── part1-claude-ai/          ផ្នែកទី ១ — Claude Project + Prompt
 │   ├── 00-project-instructions.md   Instructions សម្រាប់ Claude Project
@@ -26,7 +32,7 @@
 |---|---|---|
 | ១ Claude AI | Project + Knowledge Base · ឯកសារ ≥ ២ · Prompt ≥ ១០ | Knowledge Base + SOP + Email ២ + Report · Prompt ១៣ |
 | ២ Sheets | Formula (XLOOKUP/SUMIFS/IF) + Pivot ឬ Chart ≥ ១ + Apps Script | Sheet Balance ប្រើ XLOOKUP/SUMIFS/IF · PivotTable + Column Chart · Apps Script Email/API |
-| ៣ Website | ≥ ៣ ទំព័រ · Responsive · Live URL · Git repo | ៣ ទំព័រ · Responsive (375px+) · Deploy Netlify/Vercel (ជំហានខាងក្រោម) |
+| ៣ Website | ≥ ៣ ទំព័រ · Responsive · Live URL · Git repo | ៣ ទំព័រ · Responsive (375px+) · Vercel Live URL · GitHub repo (ខាងលើ) |
 
 ---
 
