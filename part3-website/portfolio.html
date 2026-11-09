@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="km">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>អំពីគម្រោង — គ្រប់គ្រងស្តុក</title>
+  <meta name="description" content="គម្រោង Stock & Inventory សម្រាប់ហាង ស្តុកល្អ៖ Claude AI + Google Sheets/Apps Script + Web App ភ្ជាប់ទិន្នន័យពិត។">
+  <meta name="theme-color" content="#1f2a44">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Application គ្រប់គ្រងស្តុក — ហាង ស្តុកល្អ">
+  <meta property="og:description" content="Claude AI + Google Sheets/Apps Script + Web App ភ្ជាប់ទិន្នន័យពិត">
+  <meta property="og:url" content="https://stock-inventory-part3-website.vercel.app/portfolio.html">
+  <meta property="og:image" content="https://stock-inventory-part3-website.vercel.app/assets/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/logo.png">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 100%);
+      color: #fff; border-radius: var(--radius); padding: 2rem 1.5rem;
+      display: grid; grid-template-columns: auto 1fr; gap: 1.5rem; align-items: center; margin-bottom: 1.5rem;
+    }
+    .hero img { width: 96px; height: 96px; border-radius: 20px; display: block; }
+    .hero h1 { font-size: 1.75rem; margin-bottom: .25rem; }
+    .hero p { margin: 0 0 1rem; color: #d7dcea; }
+    .hero .actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+    .hero .btn.secondary { background: transparent; color: #fff; border-color: rgba(255,255,255,.4); }
+    .hero .btn.secondary:hover { background: rgba(255,255,255,.1); }
+    .hero .btn.light { background: #fff; color: var(--navy); }
+    @media (max-width: 560px) { .hero { grid-template-columns: 1fr; padding: 1.5rem 1.25rem; } .hero img { width: 72px; height: 72px; } }
+
+    section.block { margin-bottom: 2rem; }
+    section.block > h2 { display: flex; align-items: center; gap: .5rem; }
+    section.block > h2::before { content: ""; width: 6px; height: 1.2em; background: var(--accent); border-radius: 3px; }
+    .lead { color: var(--muted); margin: -.25rem 0 1rem; }
+
+    .ps { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .ps .card h3 { font-size: 1.05rem; }
+    .ps ul, .part ul { margin: 0; padding-left: 1.2rem; }
+    .ps li, .part li { margin-bottom: .25rem; overflow-wrap: anywhere; }
+    .card.problem { border-top: 4px solid var(--out); }
+    .card.solution { border-top: 4px solid var(--ok); }
+
+    .parts { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .part { display: flex; flex-direction: column; }
+    .part .num { font-size: 14px; font-weight: 700; color: var(--accent); }
+    .part ul { flex: 1; margin-bottom: 1rem; }
+    .part .links { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .part .links .btn { min-height: 40px; padding: .35rem .9rem; font-size: 15px; }
+
+    .flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .75rem; counter-reset: step; }
+    .flow .step { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; }
+    .flow .step::before {
+      counter-increment: step; content: counter(step);
+      display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+      background: var(--navy); color: #fff; font-weight: 700; font-size: 14px; margin-bottom: .4rem;
+    }
+    .flow .step b { display: block; }
+    .flow .step span { color: var(--muted); font-size: 15px; }
+
+    .video { position: relative; aspect-ratio: 16 / 9; border-radius: var(--radius); overflow: hidden; background: #000; }
+    .video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+    .shots { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .shots figure { margin: 0; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+    .shots img { width: 100%; display: block; aspect-ratio: 16 / 10; object-fit: cover; object-position: top; border-bottom: 1px solid var(--line); }
+    .shots figcaption { padding: .6rem .85rem; font-size: 15px; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .chip { background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: .3rem .9rem; font-size: 15px; }
+
+    .timeline { list-style: none; margin: 0; padding: 0; border-left: 3px solid var(--line); }
+    .timeline li { position: relative; padding: 0 0 1.1rem 1.25rem; }
+    .timeline li::before {
+      content: ""; position: absolute; left: -9px; top: .45rem; width: 15px; height: 15px;
+      border-radius: 50%; background: var(--card); border: 3px solid var(--navy);
+    }
+    .timeline li:last-child { padding-bottom: 0; }
+    .timeline li:last-child::before { background: var(--ok); border-color: var(--ok); }
+    .timeline b { display: block; }
+    .timeline span { color: var(--muted); }
+  </style>
+</head>
+<body data-page="portfolio">
+<main>
+  <section class="hero">
+    <img src="assets/logo.svg" alt="Logo ហាង ស្តុកល្អ" width="96" height="96">
+    <div>
+      <h1>Application គ្រប់គ្រងស្តុក</h1>
+      <p>ប្រព័ន្ធកត់ត្រាស្តុកចូល–ចេញ សម្រាប់ «ហាង ស្តុកល្អ»។ វាប្រើ Claude AI សរសេរឯកសារ ប្រើ Google Sheet ជា Database ហើយប្រើ Web App សម្រាប់បុគ្គលិក។ ចំណាយ $0។</p>
+      <div class="actions">
+        <a class="btn light" href="dashboard.html">បើក Web App</a>
+        <a class="btn secondary" id="repoBtn" href="https://github.com/pisakreatrey-rgb/stock-inventory" target="_blank" rel="noopener">GitHub</a>
+        <a class="btn secondary" id="videoBtn" href="#video" hidden>▶ Video Demo</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid kpis" aria-label="ទិន្នន័យបច្ចុប្បន្ន">
+    <div class="card kpi"><div class="label">មុខទំនិញ</div><div class="value" id="kCount">–</div></div>
+    <div class="card kpi"><div class="label">តម្លៃស្តុកសរុប</div><div class="value" id="kValue">–</div></div>
+    <div class="card kpi"><div class="label">ស្តុកចេញសរុប (ឯកតា)</div><div class="value" id="kMoves">–</div></div>
+    <div class="card kpi low"><div class="label">ត្រូវបញ្ជាទិញ</div><div class="value" id="kAlert">–</div></div>
+  </section>
+
+  <section class="block">
+    <h2>បញ្ហា និងដំណោះស្រាយ</h2>
+    <div class="grid ps">
+      <div class="card problem">
+        <h3>បញ្ហាមុនពេលមានប្រព័ន្ធ</h3>
+        <ul>
+          <li>កត់ស្តុកក្នុងសៀវភៅ មិនដឹងសមតុល្យពិតប្រាកដ</li>
+          <li>ដឹងថាទំនិញអស់ ពេលអតិថិជនសួររកហើយ</li>
+          <li>របាយការណ៍ប្រចាំខែ ចំណាយពេលច្រើនម៉ោង</li>
+          <li>បុគ្គលិកម្នាក់ៗកត់តាមទម្រង់ផ្សេងៗគ្នា</li>
+        </ul>
+      </div>
+      <div class="card solution">
+        <h3>ដំណោះស្រាយ</h3>
+        <ul>
+          <li>Web App កត់ស្តុកចូល/ចេញ ពីទូរស័ព្ទ ក្នុង ១០ វិនាទី · ដឹងថាអ្នកណាកត់ (PIN)</li>
+          <li>ផ្ទាំងគ្រប់គ្រង + របាយការណ៍តាមថ្ងៃ/ខែ/ឆ្នាំ ក្នុងមួយចុច</li>
+          <li>រាប់ស្តុក និងលុបចោលការកត់ខុស ដោយរក្សាដានគ្រប់ជួរ</li>
+          <li>សមតុល្យគណនាស្វ័យប្រវត្តិ (XLOOKUP · SUMIFS · IF)</li>
+          <li>Email ជូនដំណឹងភ្លាមៗ ពេលទំនិញធ្លាក់ដល់ស្តុកអប្បបរមា</li>
+          <li>SOP និងវាក្យសព្ទរួម ពី Claude Knowledge Base</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>គម្រោង ៣ ផ្នែក</h2>
+    <p class="lead">ទាំង ៣ ផ្នែកប្រើប្រធានបទ ទិន្នន័យ និងឈ្មោះដូចគ្នា (SKU P001–P020, ស្តុកចូល, ស្តុកចេញ, សមតុល្យ)។</p>
+    <div class="grid parts">
+      <article class="card part">
+        <div class="num">ផ្នែកទី ១</div>
+        <h3>Claude AI — Project + Knowledge Base</h3>
+        <ul>
+          <li>Project Instructions + Knowledge Base ផ្ទាល់ខ្លួន</li>
+          <li>SOP ស្តុកចូល/ចេញ · Email ជូនដំណឹង + បញ្ជាទិញ</li>
+          <li>របាយការណ៍ប្រចាំខែ ពីលេខពិតក្នុង Sheet</li>
+          <li>Prompt Log ២១ Prompt</li>
+        </ul>
+        <div class="links"><a class="btn secondary" data-repo="tree/main/part1-claude-ai" target="_blank" rel="noopener">មើលឯកសារ</a></div>
+      </article>
+      <article class="card part">
+        <div class="num">ផ្នែកទី ២</div>
+        <h3>Google Sheets + Apps Script</h3>
+        <ul>
+          <li>Sheet៖ Products · StockIn · StockOut · Balance · Settings</li>
+          <li>Formula XLOOKUP · SUMIFS · IF + Conditional Formatting</li>
+          <li>PivotTable ស្តុកចេញ + Column Chart សមតុល្យ</li>
+          <li>Apps Script៖ API · PIN · លុបចោល · រាប់ស្តុក · Email · Trigger</li>
+        </ul>
+        <div class="links"><a class="btn secondary" data-repo="blob/main/part2-google-sheets/Code.gs" target="_blank" rel="noopener">មើល Code.gs</a></div>
+      </article>
+      <article class="card part">
+        <div class="num">ផ្នែកទី ៣</div>
+        <h3>Website — Web App</h3>
+        <ul>
+          <li>៧ ទំព័រ៖ ផ្ទាំងគ្រប់គ្រង · ទំនិញ · ស្តុកចូល/ចេញ · សមតុល្យ · រាប់ស្តុក · របាយការណ៍ · អំពីគម្រោង</li>
+          <li>Chart · របាយការណ៍តាមថ្ងៃ/ខែ/ឆ្នាំ · Export CSV · Print</li>
+          <li>Stock Card · លុបចោលប្រតិបត្តិការ · ចូលគណនីដោយ PIN</li>
+          <li>Responsive ចាប់ពី 375px · ភាសាខ្មែរ</li>
+          <li>ភ្ជាប់ Google Sheet ផ្ទាល់ + Demo Mode</li>
+          <li>Deploy លើ Vercel · កូដក្នុង GitHub</li>
+        </ul>
+        <div class="links">
+          <a class="btn secondary" href="dashboard.html">បើក</a>
+          <a class="btn secondary" data-repo="tree/main/part3-website" target="_blank" rel="noopener">កូដ</a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>លំហូរទិន្នន័យ</h2>
+    <div class="flow">
+      <div class="step"><b>បុគ្គលិកកត់ត្រា</b><span>Form ស្តុកចូល/ចេញ ក្នុង Web App</span></div>
+      <div class="step"><b>Apps Script API</b><span>ពិនិត្យទិន្នន័យ · បដិសេធស្តុកចេញលើសសមតុល្យ</span></div>
+      <div class="step"><b>Google Sheet</b><span>រក្សាទុក ហើយ Formula គណនាសមតុល្យ</span></div>
+      <div class="step"><b>Email ស្វ័យប្រវត្តិ</b><span>ស្តុកជិតអស់ · រាល់ថ្ងៃ 8:00 · របាយការណ៍ថ្ងៃទី 1</span></div>
+      <div class="step"><b>Claude AI</b><span>វិភាគទិន្នន័យ · សរសេររបាយការណ៍ និងអនុសាសន៍</span></div>
+    </div>
+  </section>
+
+  <section class="block" id="video" hidden>
+    <h2>Video Demo</h2>
+    <div class="video" id="videoBox"></div>
+  </section>
+
+  <section class="block" id="shotsBlock" hidden>
+    <h2>រូបថតអេក្រង់</h2>
+    <div class="grid shots" id="shots"></div>
+  </section>
+
+  <section class="block">
+    <h2>បច្ចេកវិទ្យា</h2>
+    <div class="chips">
+      <span class="chip">Claude AI (Projects)</span>
+      <span class="chip">Google Sheets</span>
+      <span class="chip">Google Apps Script</span>
+      <span class="chip">HTML · CSS · JavaScript</span>
+      <span class="chip">Git + GitHub</span>
+      <span class="chip">Vercel</span>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>ដំណើរការគម្រោង ៤ សប្តាហ៍</h2>
+    <ol class="timeline">
+      <li><b>សប្តាហ៍ទី ១ — រៀបចំ និង Claude AI</b><span>ជ្រើសប្រធានបទ · Claude Project · Knowledge Base · SOP</span></li>
+      <li><b>សប្តាហ៍ទី ២ — Google Sheets</b><span>រចនាសម្ព័ន្ធ Sheet · Formula · PivotTable · Chart · Apps Script Email</span></li>
+      <li><b>សប្តាហ៍ទី ៣ — Website</b><span>Web App ៣ ទំព័រ · ភ្ជាប់ API · Deploy Vercel · GitHub</span></li>
+      <li><b>សប្តាហ៍ទី ៤ — ពិនិត្យ និងបង្ហាញ</b><span>កែកំហុស · Dashboard · របាយការណ៍តាមថ្ងៃ/ខែ/ឆ្នាំ · PIN · Portfolio · Video Demo</span></li>
+    </ol>
+  </section>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
+<script>
+  const $ = id => document.getElementById(id);
+  const cfg = window.APP_CONFIG || {};
+  const repo = (cfg.REPO_URL || '').replace(/\/$/, '');
+
+  if (repo) {
+    $('repoBtn').href = repo;
+    document.querySelectorAll('[data-repo]').forEach(a => { a.href = `${repo}/${a.dataset.repo}`; });
+  }
+
+  // YouTube: youtu.be/ID · watch?v=ID · shorts/ID · embed/ID
+  function youtubeId(url) {
+    const m = String(url).match(/(?:youtu\.be\/|v=|shorts\/|embed\/)([\w-]{11})/);
+    return m ? m[1] : '';
+  }
+  if (cfg.VIDEO_URL) {
+    const id = youtubeId(cfg.VIDEO_URL);
+    $('videoBox').innerHTML = id
+      ? `<iframe src="https://www.youtube-nocookie.com/embed/${id}" title="Video Demo" loading="lazy"
+           allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`
+      : `<video src="${esc(cfg.VIDEO_URL)}" controls style="width:100%;height:100%"></video>`;
+    $('video').hidden = false;
+    $('videoBtn').hidden = false;
+  }
+
+  const shots = cfg.SCREENSHOTS || [];
+  if (shots.length) {
+    $('shots').innerHTML = shots.map(s => `
+      <figure>
+        <a href="${esc(s.src)}" target="_blank" rel="noopener"><img src="${esc(s.src)}" alt="${esc(s.caption)}" loading="lazy"></a>
+        <figcaption>${esc(s.caption)}</figcaption>
+      </figure>`).join('');
+    $('shotsBlock').hidden = false;
+  }
+
+  (async () => {
+    try {
+      const rows = await Api.balance();
+      $('kCount').textContent = fmtNum(rows.length);
+      $('kValue').textContent = fmtMoney(rows.reduce((t, r) => t + Number(r.value || 0), 0));
+      $('kMoves').textContent = fmtNum(rows.reduce((t, r) => t + Number(r.totalOut || 0), 0));
+      $('kAlert').textContent = fmtNum(rows.filter(r => r.status !== Api.STATUS.OK).length);
+    } catch (e) {
+      document.querySelector('.kpis').hidden = true;
+    }
+  })();
+</script>
+</body>
+</html>

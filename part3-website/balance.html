@@ -4,6 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>សមតុល្យស្តុក — គ្រប់គ្រងស្តុក</title>
+  <meta name="description" content="តារាងសមតុល្យស្តុក តាមទំនិញ ជាមួយតម្រង និងតម្លៃសរុប។">
+  <meta name="theme-color" content="#1f2a44">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="សមតុល្យស្តុក — គ្រប់គ្រងស្តុក">
+  <meta property="og:description" content="តារាងសមតុល្យស្តុក តាមទំនិញ ជាមួយតម្រង និងតម្លៃសរុប។">
+  <meta property="og:url" content="https://stock-inventory-part3-website.vercel.app/balance.html">
+  <meta property="og:image" content="https://stock-inventory-part3-website.vercel.app/assets/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&display=swap" rel="stylesheet">
@@ -16,7 +24,7 @@
   <div class="page-head">
     <div>
       <h1>តារាងសមតុល្យស្តុក</h1>
-      <p>សមតុល្យ = ស្តុកចូលសរុប − ស្តុកចេញសរុប · <span id="updated"></span></p>
+      <p>សមតុល្យ = ស្តុកចូលសរុប − ស្តុកចេញសរុប · ចុចលើឈ្មោះទំនិញ ដើម្បីមើល Stock Card · <span id="updated"></span></p>
     </div>
     <button class="btn secondary" id="btnReload" type="button">↻ ផ្ទុកឡើងវិញ</button>
   </div>
@@ -47,6 +55,8 @@
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script src="js/common.js"></script>
+<script src="js/reports.js"></script>
+<script src="js/movements-ui.js"></script>
 <script>
   const $ = id => document.getElementById(id);
   let all = [];
@@ -69,7 +79,7 @@
         `<a class="btn secondary" style="min-height:36px;padding:.25rem .7rem;font-size:14px" href="stock.html?type=in&sku=${encodeURIComponent(p.sku)}">បញ្ចូលស្តុក</a>`;
       return `<tr>
         <td class="sku hide-sm">${esc(p.sku)}</td>
-        <td>${esc(p.name)}<div class="bar" title="សមតុល្យធៀបនឹង ២×អប្បបរមា"><span style="width:${pct}%;background:${barColor[cls]}"></span></div></td>
+        <td><button class="name-btn" type="button" data-card="${esc(p.sku)}">${esc(p.name)}</button><div class="bar" title="សមតុល្យធៀបនឹង ២×អប្បបរមា"><span style="width:${pct}%;background:${barColor[cls]}"></span></div></td>
         <td class="num hide-sm">${fmtNum(p.totalIn)}</td>
         <td class="num hide-sm">${fmtNum(p.totalOut)}</td>
         <td class="num"><b>${fmtNum(p.balance)}</b> <span style="color:var(--muted);font-size:14px">${esc(p.unit)}</span></td>
@@ -80,6 +90,8 @@
         <td class="hide-sm">${action}</td>
       </tr>`;
     }).join('') : '<tr><td colspan="10" class="empty">រកមិនឃើញទំនិញ</td></tr>';
+
+    $('rows').querySelectorAll('[data-card]').forEach(b => b.addEventListener('click', () => openStockCard(b.dataset.card, load)));
 
     const sum = k => list.reduce((s, p) => s + p[k], 0);
     $('tIn').textContent = fmtNum(sum('totalIn'));
@@ -101,6 +113,7 @@
 
   const params = new URLSearchParams(location.search);
   if (params.get('status')) $('st').value = params.get('status');
+  if (params.get('sku')) openStockCard(params.get('sku'), load);
   $('q').addEventListener('input', render);
   $('st').addEventListener('change', render);
   $('btnReload').addEventListener('click', load);

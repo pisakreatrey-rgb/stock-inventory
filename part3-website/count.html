@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="km">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>រាប់ស្តុក — គ្រប់គ្រងស្តុក</title>
+  <meta name="description" content="រាប់ស្តុកជាក់ស្តែង ប្រៀបធៀបជាមួយសមតុល្យក្នុងប្រព័ន្ធ ហើយកែតម្រូវភាពខុសគ្នាដោយស្វ័យប្រវត្តិ។">
+  <meta name="theme-color" content="#1f2a44">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="រាប់ស្តុក — គ្រប់គ្រងស្តុក">
+  <meta property="og:description" content="រាប់ស្តុកជាក់ស្តែង ហើយកែតម្រូវភាពខុសគ្នាដោយស្វ័យប្រវត្តិ។">
+  <meta property="og:url" content="https://stock-inventory-part3-website.vercel.app/count.html">
+  <meta property="og:image" content="https://stock-inventory-part3-website.vercel.app/assets/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/logo.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="count">
+<main>
+  <div class="page-head">
+    <div>
+      <h1>រាប់ស្តុក</h1>
+      <p>បញ្ចូលចំនួនដែលរាប់បានជាក់ស្តែង។ ប្រព័ន្ធនឹងបង្កើតប្រតិបត្តិការ «កែតម្រូវ» សម្រាប់ភាពខុសគ្នា។</p>
+    </div>
+    <button class="btn secondary" type="button" id="btnClear">សម្អាតការរាប់</button>
+  </div>
+
+  <div class="warn-card" id="oldBackend" hidden>
+    Backend ចាស់មិនទាន់គាំទ្រការរាប់ស្តុកទេ។ សូម Paste <b>Code.gs</b> ថ្មី → Run <b>setupSheets</b> → Deploy <b>New version</b> ក្នុង Apps Script។
+  </div>
+
+  <div class="toolbar">
+    <input class="grow" id="q" type="search" placeholder="ស្វែងរកតាមឈ្មោះ ឬ SKU…" aria-label="ស្វែងរក">
+    <select id="cat" aria-label="ប្រភេទ" style="width:auto;min-width:160px"><option value="">ប្រភេទទាំងអស់</option></select>
+    <select id="show" aria-label="បង្ហាញ" style="width:auto;min-width:180px">
+      <option value="">ទំនិញទាំងអស់</option>
+      <option value="todo">មិនទាន់រាប់</option>
+      <option value="diff">ខុសគ្នាប៉ុណ្ណោះ</option>
+    </select>
+  </div>
+
+  <div class="table-wrap fit-sm">
+    <table>
+      <thead><tr>
+        <th class="hide-sm">SKU</th><th>ទំនិញ</th><th class="num">ក្នុងប្រព័ន្ធ</th><th class="num">រាប់បាន</th>
+        <th class="num">ខុសគ្នា</th><th class="num hide-sm">តម្លៃខុសគ្នា</th>
+      </tr></thead>
+      <tbody id="rows"><tr><td colspan="6" class="empty">កំពុងផ្ទុក…</td></tr></tbody>
+    </table>
+  </div>
+  <p class="hint">ទុកប្រអប់ «រាប់បាន» ទទេ សម្រាប់ទំនិញដែលមិនទាន់រាប់ — វានឹងមិនត្រូវបានកែតម្រូវទេ។ ការរាប់ត្រូវបានរក្សាទុកក្នុង Browser នេះ រហូតដល់អ្នករក្សាទុក។</p>
+
+  <div class="sticky-bar">
+    <div class="summary" id="summary">រាប់បាន 0 មុខ</div>
+    <input id="note" placeholder="ចំណាំ ឧ. រាប់ស្តុកប្រចាំសប្តាហ៍" aria-label="ចំណាំ">
+    <button class="btn" type="button" id="btnSave" disabled>រក្សាទុកការរាប់ស្តុក</button>
+  </div>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
+<script src="js/reports.js"></script>
+<script src="js/movements-ui.js"></script>
+<script>
+  const $ = id => document.getElementById(id);
+  const DRAFT_KEY = 'stock-count-draft';
+  let all = [];
+  let counts = {};
+
+  try { counts = JSON.parse(localStorage.getItem(DRAFT_KEY)) || {}; } catch (_) { counts = {}; }
+  const saveDraft = () => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(counts)); } catch (_) { /* ignore */ } };
+
+  const parseCount = v => {
+    const s = toLatinDigits(v ?? '').trim();
+    if (s === '') return null;
+    const n = Number(s);
+    return Number.isInteger(n) && n >= 0 ? n : NaN;
+  };
+
+  function diffCell(p) {
+    const c = parseCount(counts[p.sku]);
+    if (c === null) return { html: '<span class="hint">–</span>', val: '', diff: null };
+    if (isNaN(c)) return { html: '<span class="diff-neg">មិនត្រឹមត្រូវ</span>', val: '', diff: NaN };
+    const d = c - p.balance;
+    const cls = d > 0 ? 'diff-pos' : d < 0 ? 'diff-neg' : '';
+    return {
+      html: d ? `<span class="${cls}">${d > 0 ? '+' : '−'}${fmtNum(Math.abs(d))}</span>` : '<span class="hint">✓ ត្រូវគ្នា</span>',
+      val: d ? `<span class="${cls}">${d < 0 ? '−' : '+'}${fmtMoney(Math.abs(d * p.price))}</span>` : '–',
+      diff: d,
+    };
+  }
+
+  function render() {
+    const q = $('q').value.trim().toLowerCase();
+    const cat = $('cat').value;
+    const show = $('show').value;
+    const list = all.filter(p => {
+      if (cat && p.category !== cat) return false;
+      if (q && !p.name.toLowerCase().includes(q) && !p.sku.toLowerCase().includes(q)) return false;
+      const c = parseCount(counts[p.sku]);
+      if (show === 'todo' && c !== null) return false;
+      if (show === 'diff' && (c === null || c === p.balance)) return false;
+      return true;
+    });
+    $('rows').innerHTML = list.length ? list.map(p => {
+      const d = diffCell(p);
+      return `<tr data-row="${esc(p.sku)}">
+        <td class="sku hide-sm">${esc(p.sku)}</td>
+        <td>${esc(p.name)}<div class="hint">${esc(p.unit)}</div></td>
+        <td class="num">${fmtNum(p.balance)}</td>
+        <td class="num"><input class="count-input" inputmode="numeric" data-sku="${esc(p.sku)}"
+          value="${esc(counts[p.sku] ?? '')}" aria-label="ចំនួនរាប់បាន ${esc(p.name)}" placeholder="–"></td>
+        <td class="num" data-diff>${d.html}</td>
+        <td class="num hide-sm" data-val>${d.val}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="6" class="empty">រកមិនឃើញទំនិញ</td></tr>';
+
+    document.querySelectorAll('.count-input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const sku = inp.dataset.sku;
+        if (inp.value.trim() === '') delete counts[sku]; else counts[sku] = inp.value;
+        saveDraft();
+        const p = all.find(x => x.sku === sku);
+        const d = diffCell(p);
+        const tr = inp.closest('tr');
+        tr.querySelector('[data-diff]').innerHTML = d.html;
+        tr.querySelector('[data-val]').innerHTML = d.val;
+        updateSummary();
+      });
+      inp.addEventListener('keydown', ev => {
+        if (ev.key !== 'Enter') return;
+        ev.preventDefault();
+        const inputs = [...document.querySelectorAll('.count-input')];
+        const next = inputs[inputs.indexOf(inp) + 1];
+        if (next) next.focus();
+      });
+    });
+    updateSummary();
+  }
+
+  function entries() {
+    return all.map(p => ({ p, c: parseCount(counts[p.sku]) })).filter(x => x.c !== null);
+  }
+
+  function updateSummary() {
+    const e = entries();
+    const bad = e.filter(x => isNaN(x.c));
+    const diffs = e.filter(x => !isNaN(x.c) && x.c !== x.p.balance);
+    const value = diffs.reduce((s, x) => s + (x.c - x.p.balance) * x.p.price, 0);
+    $('summary').innerHTML = `រាប់បាន <b>${e.length}</b>/${all.length} មុខ · ខុសគ្នា <b>${diffs.length}</b> មុខ` +
+      (diffs.length ? ` · តម្លៃខុសគ្នា <b class="${value < 0 ? 'diff-neg' : 'diff-pos'}">${value < 0 ? '−' : '+'}${fmtMoney(Math.abs(value))}</b>` : '') +
+      (bad.length ? ` · <span class="diff-neg">${bad.length} មុខមិនត្រឹមត្រូវ</span>` : '');
+    $('btnSave').disabled = !e.length || bad.length > 0;
+  }
+
+  function confirmDialog(diffs, total) {
+    return new Promise(resolve => {
+      const dlg = makeDialog(`
+        <h2>បញ្ជាក់ការរាប់ស្តុក</h2>
+        <p>រាប់បាន <b>${total}</b> មុខ · នឹងកែតម្រូវ <b>${diffs.length}</b> មុខ៖</p>
+        <div class="table-wrap" style="max-height:300px;overflow:auto;margin-bottom:1rem">
+          <table style="min-width:0"><thead><tr><th>ទំនិញ</th><th class="num">ប្រព័ន្ធ</th><th class="num">រាប់បាន</th><th class="num">ខុសគ្នា</th></tr></thead>
+          <tbody>${diffs.length ? diffs.map(x => {
+            const d = x.c - x.p.balance;
+            return `<tr><td>${esc(x.p.name)}</td><td class="num">${fmtNum(x.p.balance)}</td><td class="num">${fmtNum(x.c)}</td>
+              <td class="num ${d > 0 ? 'diff-pos' : 'diff-neg'}">${d > 0 ? '+' : '−'}${fmtNum(Math.abs(d))}</td></tr>`;
+          }).join('') : '<tr><td colspan="4" class="empty">ត្រូវគ្នាទាំងអស់ — មិនចាំបាច់កែតម្រូវ</td></tr>'}</tbody></table>
+        </div>
+        <div class="dialog-actions">
+          <button class="btn secondary" type="button" data-no>បោះបង់</button>
+          <button class="btn" type="button" data-yes>បញ្ជាក់</button>
+        </div>`);
+      let ok = false;
+      dlg.querySelector('[data-no]').addEventListener('click', () => dlg.close());
+      dlg.querySelector('[data-yes]').addEventListener('click', () => { ok = true; dlg.close(); });
+      dlg.addEventListener('close', () => resolve(ok));
+      dlg.showModal();
+    });
+  }
+
+  $('btnSave').addEventListener('click', async () => {
+    const e = entries();
+    const diffs = e.filter(x => x.c !== x.p.balance);
+    if (!(await confirmDialog(diffs, e.length))) return;
+    const btn = $('btnSave');
+    btn.disabled = true;
+    btn.textContent = 'កំពុងរក្សាទុក…';
+    try {
+      const items = e.map(x => ({ sku: x.p.sku, counted: x.c }));
+      const r = await withAuth(() => Api.stockCount(items, $('note').value.trim()));
+      counts = {};
+      saveDraft();
+      $('note').value = '';
+      toast(r.adjusted ? `រក្សាទុករួច — បានកែតម្រូវ ${r.adjusted} មុខ` : 'រក្សាទុករួច — ស្តុកត្រូវគ្នាទាំងអស់', 'success');
+      await load();
+    } catch (err) {
+      showError(err);
+    } finally {
+      btn.textContent = 'រក្សាទុកការរាប់ស្តុក';
+      updateSummary();
+    }
+  });
+
+  $('btnClear').addEventListener('click', () => {
+    if (!Object.keys(counts).length) return;
+    counts = {};
+    saveDraft();
+    render();
+    toast('បានសម្អាតការរាប់');
+  });
+  $('q').addEventListener('input', render);
+  $('cat').addEventListener('change', render);
+  $('show').addEventListener('change', render);
+
+  async function load() {
+    try {
+      const [balances, info] = await Promise.all([Api.balance(), Api.info()]);
+      $('oldBackend').hidden = info.version >= 2;
+      all = balances;
+      const cats = [...new Set(all.map(p => p.category))];
+      const cur = $('cat').value;
+      $('cat').innerHTML = '<option value="">ប្រភេទទាំងអស់</option>' + cats.map(c => `<option>${esc(c)}</option>`).join('');
+      $('cat').value = cur;
+      render();
+    } catch (e) {
+      $('rows').innerHTML = `<tr><td colspan="6" class="empty">មានកំហុស៖ ${esc(e.message)}</td></tr>`;
+    }
+  }
+  load();
+</script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="km">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ផ្ទាំងគ្រប់គ្រង — គ្រប់គ្រងស្តុក</title>
+  <meta name="description" content="ផ្ទាំងគ្រប់គ្រងស្តុក៖ ស្តុកចូល–ចេញប្រចាំថ្ងៃ ទំនិញលក់ច្រើន តម្លៃស្តុក និងទំនិញដែលត្រូវបញ្ជាទិញ។">
+  <meta name="theme-color" content="#1f2a44">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="ផ្ទាំងគ្រប់គ្រង — គ្រប់គ្រងស្តុក">
+  <meta property="og:description" content="ស្តុកចូល–ចេញប្រចាំថ្ងៃ ទំនិញលក់ច្រើន តម្លៃស្តុក និងទំនិញដែលត្រូវបញ្ជាទិញ។">
+  <meta property="og:url" content="https://stock-inventory-part3-website.vercel.app/dashboard.html">
+  <meta property="og:image" content="https://stock-inventory-part3-website.vercel.app/assets/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/logo.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="dashboard">
+<main>
+  <div class="page-head">
+    <div>
+      <h1>ផ្ទាំងគ្រប់គ្រង</h1>
+      <p>ទិដ្ឋភាពរួមនៃស្តុក · <span id="updated">កំពុងផ្ទុក…</span></p>
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <a class="btn in" href="stock.html?type=in">⬇ ស្តុកចូល</a>
+      <a class="btn out" href="stock.html?type=out">⬆ ស្តុកចេញ</a>
+    </div>
+  </div>
+
+  <section class="grid kpis" aria-label="សង្ខេប">
+    <div class="card kpi"><div class="label">ស្តុកចេញថ្ងៃនេះ</div><div class="value" id="kToday">–</div><div class="sub" id="kTodaySub">&nbsp;</div></div>
+    <div class="card kpi"><div class="label">ស្តុកចេញខែនេះ</div><div class="value" id="kMonth">–</div><div class="sub" id="kMonthSub">&nbsp;</div></div>
+    <div class="card kpi"><div class="label">តម្លៃស្តុកបច្ចុប្បន្ន</div><div class="value" id="kValue">–</div><div class="sub" id="kValueSub">&nbsp;</div></div>
+    <div class="card kpi low"><a href="balance.html?status=ជិតអស់"><div class="label">ត្រូវបញ្ជាទិញ</div><div class="value" id="kAlert">–</div><div class="sub" id="kAlertSub">&nbsp;</div></a></div>
+  </section>
+
+  <div class="filters" aria-label="ចន្លោះពេល">
+    <div class="seg" id="daysSeg" role="group" aria-label="ចន្លោះពេល">
+      <button type="button" data-days="7">៧ ថ្ងៃ</button>
+      <button type="button" data-days="30" class="active">៣០ ថ្ងៃ</button>
+      <button type="button" data-days="90">៩០ ថ្ងៃ</button>
+    </div>
+  </div>
+
+  <div class="grid charts">
+    <section class="card chart-card">
+      <h3>ស្តុកចូល និងស្តុកចេញ ប្រចាំថ្ងៃ</h3>
+      <p class="hint" id="trendHint">ចំនួនឯកតា</p>
+      <div class="legend"><span><i style="background:#2a78d6"></i>ស្តុកចូល</span><span><i style="background:#eb6834"></i>ស្តុកចេញ</span></div>
+      <div class="chart-box tall"><canvas id="trend" aria-label="ក្រាហ្វស្តុកចូល និងស្តុកចេញប្រចាំថ្ងៃ" role="img"></canvas></div>
+      <details class="data-table"><summary>មើលជាតារាង</summary><div class="table-wrap"><table><thead><tr><th>ថ្ងៃ</th><th class="num">ចូល</th><th class="num">ចេញ</th></tr></thead><tbody id="trendTable"></tbody></table></div></details>
+    </section>
+    <section class="card chart-card">
+      <h3>ទំនិញចេញច្រើនជាងគេ</h3>
+      <p class="hint" id="topHint">៥ មុខ · ចំនួនឯកតា</p>
+      <div class="chart-box tall"><canvas id="top" aria-label="ក្រាហ្វទំនិញចេញច្រើនជាងគេ" role="img"></canvas></div>
+      <details class="data-table"><summary>មើលជាតារាង</summary><div class="table-wrap"><table><thead><tr><th>ទំនិញ</th><th class="num">ចេញ</th></tr></thead><tbody id="topTable"></tbody></table></div></details>
+    </section>
+  </div>
+
+  <div class="grid charts">
+    <section>
+      <div class="section-head" style="margin-top:0"><h2>ត្រូវបញ្ជាទិញ</h2><a class="link-btn" href="balance.html">មើលសមតុល្យទាំងអស់ →</a></div>
+      <div class="table-wrap fit-sm">
+        <table>
+          <thead><tr><th>ទំនិញ</th><th class="num">សមតុល្យ</th><th class="num hide-sm">ចេញ/ថ្ងៃ</th><th class="num">នៅសល់</th><th class="num">គួរបញ្ជាទិញ</th></tr></thead>
+          <tbody id="reorder"><tr><td colspan="5" class="empty">កំពុងផ្ទុក…</td></tr></tbody>
+        </table>
+      </div>
+      <p class="hint">«នៅសល់» = សមតុល្យ ÷ ស្តុកចេញជាមធ្យមក្នុងមួយថ្ងៃ (២៨ ថ្ងៃចុងក្រោយ) · «គួរបញ្ជាទិញ» = អប្បបរមា × ២ − សមតុល្យ</p>
+    </section>
+    <section class="card chart-card">
+      <h3>តម្លៃស្តុកតាមប្រភេទ</h3>
+      <p class="hint">ដុល្លារ ($) · សមតុល្យ × តម្លៃ</p>
+      <div class="chart-box"><canvas id="cat" aria-label="ក្រាហ្វតម្លៃស្តុកតាមប្រភេទ" role="img"></canvas></div>
+      <details class="data-table"><summary>មើលជាតារាង</summary><div class="table-wrap"><table><thead><tr><th>ប្រភេទ</th><th class="num">តម្លៃ</th></tr></thead><tbody id="catTable"></tbody></table></div></details>
+    </section>
+  </div>
+
+  <div class="section-head"><h2>ប្រតិបត្តិការចុងក្រោយ</h2><a class="link-btn" href="report.html">របាយការណ៍ →</a></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>កាលបរិច្ឆេទ</th><th>ប្រភេទ</th><th>ទំនិញ</th><th class="num">បរិមាណ</th><th>អ្នកផ្គត់ផ្គង់ / មូលហេតុ</th><th class="hide-sm">អ្នកកត់</th></tr></thead>
+      <tbody id="recent"><tr><td colspan="6" class="empty">កំពុងផ្ទុក…</td></tr></tbody>
+    </table>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
+<script src="js/reports.js"></script>
+<script src="js/movements-ui.js"></script>
+<script>
+  const $ = id => document.getElementById(id);
+  const C = { in: '#2a78d6', out: '#eb6834', value: '#2c3a5c', grid: '#e2e6ee', muted: '#5d6779' };
+  let data = null;
+  let days = 30;
+  const charts = {};
+
+  if (window.Chart) {
+    Chart.defaults.font.family = '"Kantumruy Pro", "Noto Sans Khmer", sans-serif';
+    Chart.defaults.font.size = 13;
+    Chart.defaults.color = C.muted;
+    Chart.defaults.plugins.legend.display = false;
+    Chart.defaults.plugins.tooltip.padding = 10;
+    Chart.defaults.plugins.tooltip.titleFont = { weight: '600' };
+  }
+
+  function draw(id, config) {
+    if (!window.Chart) return;
+    if (charts[id]) charts[id].destroy();
+    charts[id] = new Chart($(id), config);
+  }
+
+  const axis = (fmt, grid = true) => ({
+    beginAtZero: true,
+    grid: { color: grid ? C.grid : 'transparent', drawTicks: false },
+    border: { display: false },
+    ticks: { padding: 6, precision: 0, callback: v => fmt(v) },
+  });
+  const bar = (label, values, color) => ({
+    label, data: values, backgroundColor: color, hoverBackgroundColor: color,
+    borderRadius: 4, borderSkipped: 'start', maxBarThickness: 28,
+  });
+
+  function render() {
+    const now = new Date();
+    const today = Reports.range('today', now);
+    const month = Reports.range('month', now);
+    const sToday = Reports.summarize(data, today.from, today.to);
+    const sMonth = Reports.summarize(data, month.from, month.to);
+
+    // KPIs
+    $('kToday').textContent = fmtNum(sToday.totals.out);
+    $('kTodaySub').textContent = `${fmtMoney(sToday.totals.outValue)} · ចូល ${fmtNum(sToday.totals.in)}`;
+    $('kMonth').textContent = fmtMoney(sMonth.totals.outValue);
+    $('kMonthSub').textContent = `${fmtNum(sMonth.totals.out)} ឯកតា · ${Reports.MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+    const value = data.balances.reduce((s, b) => s + b.value, 0);
+    $('kValue').textContent = fmtMoney(value);
+    $('kValueSub').textContent = `${fmtNum(data.balances.length)} មុខទំនិញ`;
+    const low = data.balances.filter(b => b.status === Api.STATUS.LOW).length;
+    const out = data.balances.filter(b => b.status === Api.STATUS.OUT).length;
+    $('kAlert').textContent = fmtNum(low + out);
+    $('kAlertSub').textContent = `ជិតអស់ ${low} · អស់ស្តុក ${out}`;
+
+    // Trend (daily)
+    const from = Reports.addDays(today.from, -(days - 1));
+    const s = Reports.series(data, from, today.to, 'day');
+    $('trendHint').textContent = `ចំនួនឯកតា · ${fmtDay(from)} – ${fmtDay(now)}`;
+    draw('trend', {
+      type: 'bar',
+      data: { labels: s.map(x => x.short), datasets: [bar('ស្តុកចូល', s.map(x => x.in), C.in), bar('ស្តុកចេញ', s.map(x => x.out), C.out)] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        datasets: { bar: { categoryPercentage: 0.75, barPercentage: 0.9 } },
+        scales: { x: { grid: { display: false }, border: { display: false }, ticks: { maxRotation: 0, autoSkipPadding: 12 } }, y: axis(fmtNum) },
+        plugins: { tooltip: { callbacks: {
+          title: items => s[items[0].dataIndex].label,
+          label: c => ` ${c.dataset.label}៖ ${fmtNum(c.raw)}`,
+        } } },
+      },
+    });
+    const active = s.filter(x => x.in || x.out);
+    $('trendTable').innerHTML = active.length
+      ? active.slice().reverse().map(x => `<tr><td>${x.label}</td><td class="num">${fmtNum(x.in)}</td><td class="num">${fmtNum(x.out)}</td></tr>`).join('')
+      : '<tr><td colspan="3" class="empty">គ្មានប្រតិបត្តិការ</td></tr>';
+
+    // Top 5 out (same period)
+    const top = Reports.summarize(data, from, today.to).rows
+      .filter(r => r.out > 0).sort((a, b) => b.out - a.out).slice(0, 5);
+    $('topHint').textContent = `${days} ថ្ងៃចុងក្រោយ · ចំនួនឯកតា`;
+    draw('top', {
+      type: 'bar',
+      data: { labels: top.map(r => r.name), datasets: [bar('ស្តុកចេញ', top.map(r => r.out), C.out)] },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        scales: { x: axis(fmtNum), y: { grid: { display: false }, border: { display: false },
+          ticks: { callback(v) { const l = this.getLabelForValue(v); return l.length > 16 ? l.slice(0, 15) + '…' : l; } } } },
+        plugins: { tooltip: { callbacks: {
+          label: c => ` ស្តុកចេញ៖ ${fmtNum(c.raw)} ${top[c.dataIndex].unit} · ${fmtMoney(top[c.dataIndex].outValue)}`,
+        } } },
+      },
+    });
+    $('topTable').innerHTML = top.length
+      ? top.map(r => `<tr><td>${esc(r.name)}</td><td class="num">${fmtNum(r.out)}</td></tr>`).join('')
+      : '<tr><td colspan="2" class="empty">គ្មានស្តុកចេញ</td></tr>';
+
+    // Value by category
+    const cats = {};
+    data.balances.forEach(b => { cats[b.category] = (cats[b.category] || 0) + b.value; });
+    const catRows = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+    draw('cat', {
+      type: 'bar',
+      data: { labels: catRows.map(c => c[0]), datasets: [bar('តម្លៃស្តុក', catRows.map(c => Math.round(c[1] * 100) / 100), C.value)] },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        scales: { x: axis(v => '$' + fmtNum(v)), y: { grid: { display: false }, border: { display: false } } },
+        plugins: { tooltip: { callbacks: { label: c => ` ${fmtMoney(c.raw)} · ${value ? Math.round(c.raw / value * 100) : 0}%` } } },
+      },
+    });
+    $('catTable').innerHTML = catRows.map(c => `<tr><td>${esc(c[0])}</td><td class="num">${fmtMoney(c[1])}</td></tr>`).join('');
+
+    // Reorder list — ជិតអស់/អស់ស្តុក ឬនឹងអស់ក្នុង ៧ ថ្ងៃ
+    const list = data.balances.map(b => {
+      const perDay = Reports.dailyOut(data, b.sku);
+      return { ...b, perDay, daysLeft: perDay > 0 ? Math.floor(b.balance / perDay) : null,
+        reorder: Math.max(b.minStock * 2 - b.balance, 0) };
+    }).filter(b => b.status !== Api.STATUS.OK || (b.daysLeft !== null && b.daysLeft <= 7))
+      .sort((a, b) => (a.daysLeft ?? 9999) - (b.daysLeft ?? 9999) || a.balance - b.balance);
+    $('reorder').innerHTML = list.length ? list.map(b => `
+      <tr>
+        <td><button class="name-btn" type="button" data-sku="${esc(b.sku)}">${esc(b.name)}</button><div>${badge(b.status)}</div></td>
+        <td class="num"><b>${fmtNum(b.balance)}</b> <span class="hint">${esc(b.unit)}</span></td>
+        <td class="num hide-sm">${b.perDay ? b.perDay.toFixed(1) : '–'}</td>
+        <td class="num">${b.daysLeft === null ? '–' : fmtNum(b.daysLeft) + ' ថ្ងៃ'}</td>
+        <td class="num">${b.reorder ? `<a href="stock.html?type=in&sku=${encodeURIComponent(b.sku)}"><b>${fmtNum(b.reorder)}</b></a>` : '–'}</td>
+      </tr>`).join('') : '<tr><td colspan="5" class="empty">ស្តុកគ្រប់គ្រាន់ទាំងអស់ 👍</td></tr>';
+
+    // Recent
+    const recent = data.all.slice().sort((a, b) => b.t - a.t).slice(0, 8);
+    $('recent').innerHTML = recent.length ? recent.map(m => `
+      <tr class="${m.voided ? 'voided' : ''}">
+        <td style="white-space:nowrap">${fmtDate(m.date)}</td>
+        <td>${typeBadge(m)}${voidedBadge(m)}</td>
+        <td><button class="name-btn" type="button" data-sku="${esc(m.sku)}">${esc((data.products[m.sku] || {}).name || m.sku)}</button></td>
+        <td class="num">${m.type === 'in' ? '+' : '−'}${fmtNum(m.qty)}</td>
+        <td>${esc(m.party)}</td>
+        <td class="hide-sm">${esc(m.by || '')}</td>
+      </tr>`).join('') : '<tr><td colspan="6" class="empty">មិនទាន់មានប្រតិបត្តិការ</td></tr>';
+
+    document.querySelectorAll('[data-sku]').forEach(btn =>
+      btn.addEventListener('click', () => openStockCard(btn.dataset.sku, load)));
+    $('updated').textContent = 'ធ្វើបច្ចុប្បន្នភាព ' + fmtDate(now.toISOString());
+  }
+
+  async function load() {
+    try {
+      data = await Reports.load();
+      render();
+    } catch (e) {
+      $('updated').textContent = 'មានកំហុស៖ ' + e.message;
+      showError(e);
+    }
+  }
+
+  document.querySelectorAll('#daysSeg button').forEach(b => b.addEventListener('click', () => {
+    days = Number(b.dataset.days);
+    document.querySelectorAll('#daysSeg button').forEach(x => x.classList.toggle('active', x === b));
+    if (data) render();
+  }));
+  load();
+</script>
+</body>
+</html>
