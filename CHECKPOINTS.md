@@ -70,8 +70,10 @@
 - ពិនិត្យ Web App ហើយកែបញ្ហា ៥ ចំណុច (ស្តុកចេញលើសសមតុល្យ, Note, ទូរស័ព្ទ, Form, Column បញ្ជាទិញ) — PR #1
 - ទំនិញ ២០ មុខ · របាយការណ៍ប្រចាំខែពីលេខពិត · Prompt Log ១៧ · Logo — PR #2
 - ទំព័រ Portfolio (`portfolio.html`) · Social preview · README
+- ផ្ទាំងគ្រប់គ្រង (Chart) · របាយការណ៍តាមថ្ងៃ/ខែ/ឆ្នាំ + CSV/PDF · Stock Card
+- រាប់ស្តុក · លុបចោលប្រតិបត្តិការ · ចូលគណនីដោយ PIN (Code.gs v2)
 - Video Demo ៣–៥ នាទី
 
-**ភស្តុតាង៖** [04-monthly-report.md](part1-claude-ai/04-monthly-report.md) · [portfolio.html](part3-website/portfolio.html) · Prompt #14–17 · Pull Requests លើ GitHub
+**ភស្តុតាង៖** [04-monthly-report.md](part1-claude-ai/04-monthly-report.md) · [portfolio.html](part3-website/portfolio.html) · Prompt #14–21 · Pull Requests លើ GitHub
 
 **មតិគ្រូ៖**

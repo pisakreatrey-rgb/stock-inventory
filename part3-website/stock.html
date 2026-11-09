@@ -68,8 +68,8 @@
       <h2>ប្រតិបត្តិការចុងក្រោយ</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>កាលបរិច្ឆេទ</th><th>ប្រភេទ</th><th>ទំនិញ</th><th class="num">បរិមាណ</th><th>អ្នកផ្គត់ផ្គង់ / មូលហេតុ</th></tr></thead>
-          <tbody id="recent"><tr><td colspan="5" class="empty">កំពុងផ្ទុក…</td></tr></tbody>
+          <thead><tr><th>កាលបរិច្ឆេទ</th><th>ប្រភេទ</th><th>ទំនិញ</th><th class="num">បរិមាណ</th><th>អ្នកផ្គត់ផ្គង់ / មូលហេតុ</th><th>អ្នកកត់</th><th id="voidHead" hidden></th></tr></thead>
+          <tbody id="recent"><tr><td colspan="7" class="empty">កំពុងផ្ទុក…</td></tr></tbody>
         </table>
       </div>
     </section>
@@ -79,6 +79,8 @@
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script src="js/common.js"></script>
+<script src="js/reports.js"></script>
+<script src="js/movements-ui.js"></script>
 <script>
   const $ = id => document.getElementById(id);
   let type = new URLSearchParams(location.search).get('type') === 'out' ? 'out' : 'in';
@@ -120,16 +122,25 @@
   }
 
   async function loadRecent() {
-    const list = await Api.movements(15);
+    const [list, allowVoid] = await Promise.all([Api.movements(15), canVoid()]);
     const names = Object.fromEntries(balances.map(p => [p.sku, p.name]));
+    $('voidHead').hidden = !allowVoid;
     $('recent').innerHTML = list.length ? list.map(m => `
-      <tr>
+      <tr class="${m.voided ? 'voided' : ''}">
         <td style="white-space:nowrap">${fmtDate(m.date)}</td>
-        <td>${m.type === 'in' ? '<span class="badge in-t">ចូល</span>' : '<span class="badge out-t">ចេញ</span>'}</td>
-        <td>${esc(names[m.sku] || m.sku)}</td>
+        <td>${typeBadge(m)}${voidedBadge(m)}</td>
+        <td><button class="name-btn" type="button" data-card="${esc(m.sku)}">${esc(names[m.sku] || m.sku)}</button></td>
         <td class="num">${m.type === 'in' ? '+' : '−'}${fmtNum(m.qty)}</td>
         <td>${esc(m.party)}</td>
-      </tr>`).join('') : '<tr><td colspan="5" class="empty">មិនទាន់មានប្រតិបត្តិការ</td></tr>';
+        <td>${esc(m.by || '')}</td>
+        ${allowVoid ? `<td>${m.voided ? '' : `<button class="link-btn danger" type="button" data-void="${esc(m.id)}">លុបចោល</button>`}</td>` : ''}
+      </tr>`).join('') : '<tr><td colspan="7" class="empty">មិនទាន់មានប្រតិបត្តិការ</td></tr>';
+    const refresh = async () => { await loadProducts(); await loadRecent(); };
+    $('recent').querySelectorAll('[data-card]').forEach(b => b.addEventListener('click', () => openStockCard(b.dataset.card, refresh)));
+    $('recent').querySelectorAll('[data-void]').forEach(b => b.addEventListener('click', async () => {
+      const m = list.find(x => String(x.id) === b.dataset.void);
+      if (await voidFlow(m, names[m.sku])) refresh();
+    }));
   }
 
   document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => setType(b.dataset.type)));
@@ -151,14 +162,14 @@
     btn.disabled = true;
     btn.textContent = 'កំពុងរក្សាទុក…';
     try {
-      const r = type === 'in' ? await Api.stockIn(f) : await Api.stockOut(f);
+      const r = await withAuth(() => (type === 'in' ? Api.stockIn(f) : Api.stockOut(f)));
       toast(`ជោគជ័យ — សមតុល្យថ្មី ${fmtNum(r.balance)} (${r.status})`, 'success');
       const sku = f.sku;
       ev.target.reset();
       await loadProducts(sku);
       await loadRecent();
     } catch (e) {
-      toast(e.message, 'error');
+      showError(e);
     } finally {
       btn.disabled = false;
       setType(type);

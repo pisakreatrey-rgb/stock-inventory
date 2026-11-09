@@ -10,6 +10,11 @@
  *  4. Run `createTriggers` ម្តង → Email ជូនដំណឹងប្រចាំថ្ងៃ + របាយការណ៍ប្រចាំខែ
  *  5. Deploy → New deployment → Web app · Execute as: Me · Who has access: Anyone
  *     → ចម្លង URL (…/exec) ទៅដាក់ក្នុង part3-website/js/config.js
+ *
+ * Update ពី Version 1 (មុនមាន PIN / លុបចោល / រាប់ស្តុក)៖
+ *  - Paste កូដនេះជំនួស → Run `setupSheets` ម្តងទៀត (ទិន្នន័យចាស់មិនបាត់ទេ)
+ *    → បន្ថែម Column By/Void, Sheet "Staff" (PIN បង្កើតដោយចៃដន្យ), Formula ថ្មី
+ *  - Deploy → Manage deployments → Edit → Version: New version → Deploy
  */
 
 const SHEETS = {
@@ -19,18 +24,24 @@ const SHEETS = {
   BALANCE: 'Balance',
   SETTINGS: 'Settings',
   PIVOT: 'Pivot_StockOut',
+  STAFF: 'Staff',
 };
 
 const HEADERS = {
   Products: ['SKU', 'Name', 'Category', 'Unit', 'Price', 'MinStock'],
-  StockIn: ['ID', 'Date', 'SKU', 'Qty', 'Supplier', 'Note'],
-  StockOut: ['ID', 'Date', 'SKU', 'Qty', 'Reason', 'Note'],
+  StockIn: ['ID', 'Date', 'SKU', 'Qty', 'Supplier', 'Note', 'By', 'Void'],
+  StockOut: ['ID', 'Date', 'SKU', 'Qty', 'Reason', 'Note', 'By', 'Void'],
+  Staff: ['Name', 'PIN', 'Role'],
   Balance: ['SKU', 'Name', 'TotalIn', 'TotalOut', 'Balance', 'MinStock', 'Status', 'Value'],
 };
 
 const STATUS = { OUT: 'អស់ស្តុក', LOW: 'ជិតអស់', OK: 'គ្រប់គ្រាន់' };
 const BALANCE_ROWS = 500; // ចំនួនជួរ Formula ក្នុង Sheet Balance
 const LOGO_URL = 'https://stock-inventory-part3-website.vercel.app/assets/logo.png';
+const API_VERSION = 2;
+const ROLES = { OWNER: 'owner', STAFF: 'staff' };
+const SESSION_SECONDS = 6 * 60 * 60;  // CacheService អតិបរមា ៦ ម៉ោង
+const ADJUST = 'កែតម្រូវ';            // មូលហេតុ/អ្នកផ្គត់ផ្គង់ សម្រាប់ការរាប់ស្តុក
 
 /* ============================== MENU ============================== */
 
@@ -49,11 +60,12 @@ function onOpen() {
 
 /* ============================== WEB API ============================== */
 
-/** GET ?action=products | balance | movements&limit=20 | summary */
+/** GET ?action=info | products | balance | movements&limit=20 */
 function doGet(e) {
   try {
     const action = (e && e.parameter && e.parameter.action) || 'balance';
     switch (action) {
+      case 'info':      return json_({ ok: true, data: { version: API_VERSION, auth: staff_().length > 0 } });
       case 'products':  return json_({ ok: true, data: getProducts_() });
       case 'balance':   return json_({ ok: true, data: getBalances_() });
       case 'movements': return json_({ ok: true, data: getMovements_(Number(e.parameter.limit) || 20) });
@@ -68,7 +80,11 @@ function doGet(e) {
  * POST body (sent as text/plain to avoid CORS preflight):
  *  { action: "stockIn",  sku, qty, supplier, note }
  *  { action: "stockOut", sku, qty, reason, note }
- *  { action: "addProduct", sku, name, category, unit, price, minStock }
+ *  { action: "addProduct", sku, name, category, unit, price, minStock }     (ម្ចាស់ហាង)
+ *  { action: "login", pin }                     → { token, name, role }
+ *  { action: "void", id, reason }               លុបចោលប្រតិបត្តិការ (ម្ចាស់ហាង)
+ *  { action: "stockCount", items: [{ sku, counted }], note }   រាប់ស្តុក → កែតម្រូវ
+ * សកម្មភាពកត់ត្រាទាំងអស់ត្រូវការ token (ពី login) បើ Sheet "Staff" មានបុគ្គលិក។
  */
 function doPost(e) {
   const lock = LockService.getScriptLock();
@@ -77,14 +93,17 @@ function doPost(e) {
     const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
     let result;
     switch (body.action) {
-      case 'stockIn':    result = addStockIn_(body); break;
-      case 'stockOut':   result = addStockOut_(body); break;
-      case 'addProduct': result = addProduct_(body); break;
+      case 'login':      result = login_(body); break;
+      case 'stockIn':    result = addStockIn_(body, auth_(body)); break;
+      case 'stockOut':   result = addStockOut_(body, auth_(body)); break;
+      case 'stockCount': result = stockCount_(body, auth_(body)); break;
+      case 'addProduct': auth_(body, ROLES.OWNER); result = addProduct_(body); break;
+      case 'void':       result = void_(body, auth_(body, ROLES.OWNER)); break;
       default: throw new Error('Unknown action: ' + body.action);
     }
     return json_({ ok: true, data: result });
   } catch (err) {
-    return json_({ ok: false, error: String(err.message || err) });
+    return json_({ ok: false, error: String(err.message || err), code: err.code || '' });
   } finally {
     lock.releaseLock();
   }
@@ -111,6 +130,11 @@ function rows_(name) {
     .map(r => Object.fromEntries(head.map((h, i) => [h, r[i]])));
 }
 
+/** ជួរដែលមិនត្រូវបានលុបចោល (Column Void ទទេ) */
+function activeRows_(name) {
+  return rows_(name).filter(r => !r.Void);
+}
+
 function getProducts_() {
   return rows_(SHEETS.PRODUCTS).map(p => ({
     sku: String(p.SKU), name: p.Name, category: p.Category, unit: p.Unit,
@@ -121,7 +145,7 @@ function getProducts_() {
 /** គណនាសមតុល្យក្នុង Script (មិនពឹងលើ Formula ដើម្បីឲ្យលទ្ធផលភ្លាមៗ) */
 function getBalances_() {
   const totals = {};
-  const add = (sheetName, field) => rows_(sheetName).forEach(r => {
+  const add = (sheetName, field) => activeRows_(sheetName).forEach(r => {
     const sku = String(r.SKU);
     totals[sku] = totals[sku] || { in: 0, out: 0 };
     totals[sku][field] += Number(r.Qty) || 0;
@@ -150,6 +174,7 @@ function getMovements_(limit) {
   const map = (type, extraKey) => r => ({
     id: r.ID, type, date: toIso_(r.Date), sku: String(r.SKU),
     qty: Number(r.Qty) || 0, party: r[extraKey] || '', note: String(r.Note ?? ''),
+    by: String(r.By ?? ''), voided: !!r.Void, voidNote: String(r.Void ?? ''),
   });
   const all = rows_(SHEETS.IN).map(map('in', 'Supplier'))
     .concat(rows_(SHEETS.OUT).map(map('out', 'Reason')));
@@ -184,32 +209,38 @@ function appendMovement_(sheetName, row) {
   sh.getRange(sh.getLastRow(), 6).setNumberFormat('@').setValue(row[5]);
 }
 
-function addStockIn_(b) {
+function balanceOf_(sku) {
+  return getBalances_().find(x => x.sku === sku);
+}
+
+function addStockIn_(b, user) {
   const p = findProduct_(b.sku);
   const qty = validateQty_(b.qty);
   const id = 'IN-' + Date.now();
-  appendMovement_(SHEETS.IN, [id, new Date(), p.sku, qty, b.supplier || '', String(b.note || '')]);
-  const bal = getBalances_().find(x => x.sku === p.sku);
+  appendMovement_(SHEETS.IN, [id, new Date(), p.sku, qty, b.supplier || '', String(b.note || ''), user.name]);
+  const bal = balanceOf_(p.sku);
   return { id, balance: bal.balance, status: bal.status };
 }
 
-function addStockOut_(b) {
+function addStockOut_(b, user) {
   const p = findProduct_(b.sku);
   const qty = validateQty_(b.qty);
-  const before = getBalances_().find(x => x.sku === p.sku);
+  const before = balanceOf_(p.sku);
   if (qty > before.balance) {
     throw new Error('ស្តុកមិនគ្រប់គ្រាន់។ សមតុល្យបច្ចុប្បន្ន ' + before.balance + ' ' + p.unit + '។');
   }
   const id = 'OUT-' + Date.now();
-  appendMovement_(SHEETS.OUT, [id, new Date(), p.sku, qty, b.reason || 'លក់', String(b.note || '')]);
-
+  appendMovement_(SHEETS.OUT, [id, new Date(), p.sku, qty, b.reason || 'លក់', String(b.note || ''), user.name]);
   const after = before.balance - qty;
-  const status = statusOf_(after, p.minStock);
-  // ផ្ញើ Email ភ្លាមៗ ពេលទំនិញទើបតែធ្លាក់ចុះដល់កម្រិតអប្បបរមា
-  if (before.balance > p.minStock && after <= p.minStock) {
-    sendAlertEmail_([Object.assign({}, before, { balance: after, status })], 'ភ្លាមៗ');
+  notifyIfLow_(before, after);
+  return { id, balance: after, status: statusOf_(after, p.minStock) };
+}
+
+/** ផ្ញើ Email ភ្លាមៗ ពេលទំនិញទើបតែធ្លាក់ចុះដល់កម្រិតអប្បបរមា */
+function notifyIfLow_(before, after) {
+  if (before.balance > before.minStock && after <= before.minStock) {
+    sendAlertEmail_([Object.assign({}, before, { balance: after, status: statusOf_(after, before.minStock) })], 'ភ្លាមៗ');
   }
-  return { id, balance: after, status };
 }
 
 function addProduct_(b) {
@@ -223,6 +254,138 @@ function addProduct_(b) {
   if (getProducts_().some(p => p.sku === sku)) throw new Error('SKU "' + sku + '" មានរួចហើយ។');
   sheet_(SHEETS.PRODUCTS).appendRow([sku, b.name, b.category || 'ផ្សេងៗ', b.unit, price, minStock]);
   return { sku };
+}
+
+/**
+ * លុបចោលប្រតិបត្តិការ (Void) — មិនលុបជួរចេញទេ គឺសរសេរក្នុង Column Void ដើម្បីរក្សាដាន។
+ * ការលុបចោលស្តុកចូល ត្រូវបដិសេធ បើវាធ្វើឲ្យសមតុល្យក្លាយជាអវិជ្ជមាន។
+ */
+function void_(b, user) {
+  const id = String(b.id || '').trim();
+  const reason = String(b.reason || '').trim();
+  if (!id) throw new Error('រកមិនឃើញលេខប្រតិបត្តិការ។');
+  if (!reason) throw new Error('សូមបញ្ចូលមូលហេតុនៃការលុបចោល។');
+
+  const sheetName = id.indexOf('IN-') === 0 ? SHEETS.IN : SHEETS.OUT;
+  const sh = sheet_(sheetName);
+  const values = sh.getDataRange().getValues();
+  const head = values[0];
+  const col = name => head.indexOf(name);
+  if (col('Void') < 0) throw new Error('Sheet មិនទាន់មាន Column Void។ សូម Run setupSheets ម្តងទៀត។');
+  const r = values.findIndex((row, i) => i > 0 && String(row[col('ID')]) === id);
+  if (r < 0) throw new Error('រកមិនឃើញប្រតិបត្តិការ "' + id + '"។');
+  if (values[r][col('Void')]) throw new Error('ប្រតិបត្តិការនេះត្រូវបានលុបចោលរួចហើយ។');
+
+  const sku = String(values[r][col('SKU')]);
+  const qty = Number(values[r][col('Qty')]) || 0;
+  const before = balanceOf_(sku);
+  if (sheetName === SHEETS.IN && before && before.balance - qty < 0) {
+    throw new Error('មិនអាចលុបចោលបានទេ៖ សមតុល្យនឹងក្លាយជា ' + (before.balance - qty) +
+      '។ សូមលុបចោលស្តុកចេញដែលពាក់ព័ន្ធជាមុនសិន។');
+  }
+  const stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm');
+  sh.getRange(r + 1, col('Void') + 1).setValue(reason + ' · ' + (user.name || '—') + ' · ' + stamp);
+
+  const after = balanceOf_(sku);
+  if (sheetName === SHEETS.IN && before && after) notifyIfLow_(before, after.balance);
+  return { id, sku, balance: after ? after.balance : 0, status: after ? after.status : '' };
+}
+
+/**
+ * រាប់ស្តុកជាក់ស្តែង — ប្រៀបធៀបចំនួនដែលរាប់បាន ជាមួយសមតុល្យក្នុងប្រព័ន្ធ
+ * ហើយបង្កើតប្រតិបត្តិការ «កែតម្រូវ» សម្រាប់ភាពខុសគ្នា (+ ជាស្តុកចូល · − ជាស្តុកចេញ)។
+ */
+function stockCount_(b, user) {
+  const items = Array.isArray(b.items) ? b.items : [];
+  if (!items.length) throw new Error('មិនមានទំនិញដែលបានរាប់។');
+  const balances = Object.fromEntries(getBalances_().map(x => [x.sku, x]));
+  const note = String(b.note || 'រាប់ស្តុក').trim() || 'រាប់ស្តុក';
+  const now = new Date();
+  const ins = [], outs = [], changes = [];
+  let seq = 0;
+
+  items.forEach(it => {
+    const sku = String(it.sku || '');
+    const cur = balances[sku];
+    if (!cur) throw new Error('រកមិនឃើញទំនិញ SKU "' + sku + '"។');
+    const counted = Number(it.counted);
+    if (!Number.isInteger(counted) || counted < 0) {
+      throw new Error('ចំនួនរាប់បានរបស់ ' + sku + ' មិនត្រឹមត្រូវ។ សូមបញ្ចូលចំនួនគត់ ≥ ០។');
+    }
+    const diff = counted - cur.balance;
+    if (!diff) return;
+    const id = (diff > 0 ? 'IN-' : 'OUT-') + (now.getTime() + seq++);
+    const memo = note + ' · ប្រព័ន្ធ ' + cur.balance + ' → រាប់បាន ' + counted;
+    (diff > 0 ? ins : outs).push([id, now, sku, Math.abs(diff), ADJUST, memo, user.name]);
+    changes.push({ sku, system: cur.balance, counted, diff });
+  });
+
+  const write = (sheetName, rows) => {
+    if (!rows.length) return;
+    const sh = sheet_(sheetName);
+    const start = sh.getLastRow() + 1;
+    sh.getRange(start, 6, rows.length, 1).setNumberFormat('@');
+    sh.getRange(start, 1, rows.length, rows[0].length).setValues(rows);
+  };
+  write(SHEETS.IN, ins);
+  write(SHEETS.OUT, outs);
+
+  const low = changes
+    .filter(c => c.system > balances[c.sku].minStock && c.counted <= balances[c.sku].minStock)
+    .map(c => Object.assign({}, balances[c.sku], {
+      balance: c.counted, status: statusOf_(c.counted, balances[c.sku].minStock) }));
+  if (low.length) sendAlertEmail_(low, 'ក្រោយរាប់ស្តុក');
+
+  return { counted: items.length, adjusted: changes.length, changes };
+}
+
+/* ============================== AUTH ============================== */
+
+function authError_(msg) {
+  const e = new Error(msg);
+  e.code = 'AUTH';
+  return e;
+}
+
+/** បុគ្គលិកពី Sheet "Staff" (Name · PIN · Role) — បើគ្មាន Sheet នេះ ប្រព័ន្ធមិនទាមទារ PIN */
+function staff_() {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.STAFF);
+  if (!sh || sh.getLastRow() < 2) return [];
+  return rows_(SHEETS.STAFF)
+    .map(r => ({ name: String(r.Name).trim(), pin: String(r.PIN).trim(),
+      role: String(r.Role).trim().toLowerCase() === ROLES.OWNER ? ROLES.OWNER : ROLES.STAFF }))
+    .filter(s => s.name && s.pin);
+}
+
+function login_(b) {
+  const cache = CacheService.getScriptCache();
+  const fails = Number(cache.get('loginFails') || 0);
+  if (fails >= 10) throw authError_('ព្យាយាមខុសច្រើនដងពេក។ សូមរង់ចាំ ១០ នាទី ហើយសាកម្តងទៀត។');
+  const pin = String(b.pin || '').trim();
+  const user = staff_().find(s => s.pin === pin);
+  if (!pin || !user) {
+    cache.put('loginFails', String(fails + 1), 600);
+    throw authError_('PIN មិនត្រឹមត្រូវ។ សូមបញ្ចូលម្តងទៀត។');
+  }
+  const token = Utilities.getUuid();
+  const session = { name: user.name, role: user.role };
+  cache.put('tok:' + token, JSON.stringify(session), SESSION_SECONDS);
+  return Object.assign({ token }, session);
+}
+
+/** ពិនិត្យ token · needRole = 'owner' សម្រាប់សកម្មភាពរបស់ម្ចាស់ហាង */
+function auth_(b, needRole) {
+  if (!staff_().length) return { name: '', role: ROLES.OWNER }; // មិនទាន់កំណត់បុគ្គលិក → បើកចំហ
+  const token = String(b.token || '');
+  const cache = CacheService.getScriptCache();
+  const raw = token && cache.get('tok:' + token);
+  if (!raw) throw authError_('សូមចូលគណនីម្តងទៀត (Session ផុតកំណត់)។');
+  const session = JSON.parse(raw);
+  cache.put('tok:' + token, raw, SESSION_SECONDS); // ពន្យារពេលរាល់ពេលប្រើ
+  if (needRole === ROLES.OWNER && session.role !== ROLES.OWNER) {
+    throw new Error('មានតែម្ចាស់ហាងទេ ដែលអាចធ្វើសកម្មភាពនេះ។');
+  }
+  return session;
 }
 
 /* ============================== EMAIL ============================== */
@@ -288,7 +451,7 @@ function sendMonthlyReport() {
   const inRange = r => r.Date instanceof Date && r.Date >= start && r.Date < end;
 
   const sum = {};
-  const tally = (sheetName, field) => rows_(sheetName).filter(inRange).forEach(r => {
+  const tally = (sheetName, field) => activeRows_(sheetName).filter(inRange).forEach(r => {
     const sku = String(r.SKU);
     sum[sku] = sum[sku] || { in: 0, out: 0 };
     sum[sku][field] += Number(r.Qty) || 0;
@@ -349,13 +512,12 @@ function setupSheets() {
   const get = name => ss.getSheetByName(name) || ss.insertSheet(name);
 
   // Products / StockIn / StockOut
+  // ក្បាលតារាង — សរសេរគ្រប់ពេល ដើម្បីបន្ថែម Column ថ្មី (By, Void) ទៅ Sheet ចាស់
   [SHEETS.PRODUCTS, SHEETS.IN, SHEETS.OUT].forEach(name => {
     const sh = get(name);
-    if (sh.getLastRow() === 0) {
-      sh.getRange(1, 1, 1, HEADERS[name].length).setValues([HEADERS[name]])
-        .setFontWeight('bold').setBackground('#1f2a44').setFontColor('#ffffff');
-      sh.setFrozenRows(1);
-    }
+    sh.getRange(1, 1, 1, HEADERS[name].length).setValues([HEADERS[name]])
+      .setFontWeight('bold').setBackground('#1f2a44').setFontColor('#ffffff');
+    sh.setFrozenRows(1);
   });
   sheet_(SHEETS.IN).getRange('B:B').setNumberFormat('dd/mm/yyyy hh:mm');
   sheet_(SHEETS.OUT).getRange('B:B').setNumberFormat('dd/mm/yyyy hh:mm');
@@ -377,6 +539,19 @@ function setupSheets() {
     st.getRange('A1:B1').setFontWeight('bold');
   }
 
+  // Staff — PIN ៦ ខ្ទង់ បង្កើតដោយចៃដន្យ (មើល PIN ក្នុង Sheet "Staff" ឬ Execution log)
+  const staff = ss.getSheetByName(SHEETS.STAFF) || ss.insertSheet(SHEETS.STAFF);
+  if (staff.getLastRow() === 0) {
+    const pin = () => String(100000 + Math.floor(Math.random() * 900000));
+    const rows = [HEADERS.Staff, ['ម្ចាស់ហាង', pin(), ROLES.OWNER], ['អ្នកលក់ ១', pin(), ROLES.STAFF]];
+    staff.getRange('B:B').setNumberFormat('@');
+    staff.getRange(1, 1, rows.length, 3).setValues(rows);
+    staff.getRange('A1:C1').setFontWeight('bold').setBackground('#1f2a44').setFontColor('#ffffff');
+    staff.setFrozenRows(1);
+    staff.getRange('E1').setValue('Role: owner = ម្ចាស់ហាង (លុបចោល · បន្ថែមទំនិញ) · staff = បុគ្គលិក។ ប្តូរ PIN បានគ្រប់ពេល។');
+    Logger.log('PIN ម្ចាស់ហាង: ' + rows[1][1] + ' · PIN អ្នកលក់ ១: ' + rows[2][1]);
+  }
+
   // Balance — Formula: XLOOKUP + SUMIFS + IF
   const bal = get(SHEETS.BALANCE);
   bal.clear();
@@ -388,8 +563,8 @@ function setupSheets() {
     f.push([
       '=IF(Products!A' + r + '="","",Products!A' + r + ')',
       '=IF(A' + r + '="","",XLOOKUP(A' + r + ',Products!A:A,Products!B:B,""))',
-      '=IF(A' + r + '="","",SUMIFS(StockIn!D:D,StockIn!C:C,A' + r + '))',
-      '=IF(A' + r + '="","",SUMIFS(StockOut!D:D,StockOut!C:C,A' + r + '))',
+      '=IF(A' + r + '="","",SUMIFS(StockIn!D:D,StockIn!C:C,A' + r + ',StockIn!H:H,""))',
+      '=IF(A' + r + '="","",SUMIFS(StockOut!D:D,StockOut!C:C,A' + r + ',StockOut!H:H,""))',
       '=IF(A' + r + '="","",C' + r + '-D' + r + ')',
       '=IF(A' + r + '="","",XLOOKUP(A' + r + ',Products!A:A,Products!F:F,0))',
       '=IF(A' + r + '="","",IF(E' + r + '<=0,"' + STATUS.OUT + '",IF(E' + r + '<=F' + r + ',"' + STATUS.LOW + '","' + STATUS.OK + '")))',
@@ -424,11 +599,12 @@ function setupSheets() {
   // PivotTable — ស្តុកចេញសរុបតាម SKU និងមូលហេតុ
   const pv = get(SHEETS.PIVOT);
   pv.clear();
-  const src = sheet_(SHEETS.OUT).getRange('A1:F');
+  const src = sheet_(SHEETS.OUT).getRange('A1:H');
   const pivot = pv.getRange('A1').createPivotTable(src);
   pivot.addRowGroup(3);    // SKU
   pivot.addColumnGroup(5); // Reason
   pivot.addPivotValue(4, SpreadsheetApp.PivotTableSummarizeFunction.SUM); // Qty
+  pivot.addFilter(8, SpreadsheetApp.newFilterCriteria().whenCellEmpty().build()); // មិនរាប់ជួរលុបចោល
 
   try { insertLogo(); } catch (err) { Logger.log('Logo: ' + err); }
   ss.setActiveSheet(bal);

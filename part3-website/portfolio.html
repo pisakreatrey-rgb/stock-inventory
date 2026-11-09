@@ -93,7 +93,7 @@
       <h1>Application គ្រប់គ្រងស្តុក</h1>
       <p>ប្រព័ន្ធកត់ត្រាស្តុកចូល–ចេញ សម្រាប់ «ហាង ស្តុកល្អ»។ វាប្រើ Claude AI សរសេរឯកសារ ប្រើ Google Sheet ជា Database ហើយប្រើ Web App សម្រាប់បុគ្គលិក។ ចំណាយ $0។</p>
       <div class="actions">
-        <a class="btn light" href="index.html">បើក Web App</a>
+        <a class="btn light" href="dashboard.html">បើក Web App</a>
         <a class="btn secondary" id="repoBtn" href="https://github.com/pisakreatrey-rgb/stock-inventory" target="_blank" rel="noopener">GitHub</a>
         <a class="btn secondary" id="videoBtn" href="#video" hidden>▶ Video Demo</a>
       </div>
@@ -122,7 +122,9 @@
       <div class="card solution">
         <h3>ដំណោះស្រាយ</h3>
         <ul>
-          <li>Web App កត់ស្តុកចូល/ចេញ ពីទូរស័ព្ទ ក្នុង ១០ វិនាទី</li>
+          <li>Web App កត់ស្តុកចូល/ចេញ ពីទូរស័ព្ទ ក្នុង ១០ វិនាទី · ដឹងថាអ្នកណាកត់ (PIN)</li>
+          <li>ផ្ទាំងគ្រប់គ្រង + របាយការណ៍តាមថ្ងៃ/ខែ/ឆ្នាំ ក្នុងមួយចុច</li>
+          <li>រាប់ស្តុក និងលុបចោលការកត់ខុស ដោយរក្សាដានគ្រប់ជួរ</li>
           <li>សមតុល្យគណនាស្វ័យប្រវត្តិ (XLOOKUP · SUMIFS · IF)</li>
           <li>Email ជូនដំណឹងភ្លាមៗ ពេលទំនិញធ្លាក់ដល់ស្តុកអប្បបរមា</li>
           <li>SOP និងវាក្យសព្ទរួម ពី Claude Knowledge Base</li>
@@ -142,7 +144,7 @@
           <li>Project Instructions + Knowledge Base ផ្ទាល់ខ្លួន</li>
           <li>SOP ស្តុកចូល/ចេញ · Email ជូនដំណឹង + បញ្ជាទិញ</li>
           <li>របាយការណ៍ប្រចាំខែ ពីលេខពិតក្នុង Sheet</li>
-          <li>Prompt Log ១៩ Prompt</li>
+          <li>Prompt Log ២១ Prompt</li>
         </ul>
         <div class="links"><a class="btn secondary" data-repo="tree/main/part1-claude-ai" target="_blank" rel="noopener">មើលឯកសារ</a></div>
       </article>
@@ -153,7 +155,7 @@
           <li>Sheet៖ Products · StockIn · StockOut · Balance · Settings</li>
           <li>Formula XLOOKUP · SUMIFS · IF + Conditional Formatting</li>
           <li>PivotTable ស្តុកចេញ + Column Chart សមតុល្យ</li>
-          <li>Apps Script៖ API · Email · Trigger ប្រចាំថ្ងៃ/ខែ</li>
+          <li>Apps Script៖ API · PIN · លុបចោល · រាប់ស្តុក · Email · Trigger</li>
         </ul>
         <div class="links"><a class="btn secondary" data-repo="blob/main/part2-google-sheets/Code.gs" target="_blank" rel="noopener">មើល Code.gs</a></div>
       </article>
@@ -161,13 +163,15 @@
         <div class="num">ផ្នែកទី ៣</div>
         <h3>Website — Web App</h3>
         <ul>
-          <li>៤ ទំព័រ៖ បញ្ជីទំនិញ · ស្តុកចូល/ចេញ · សមតុល្យ · អំពីគម្រោង</li>
+          <li>៧ ទំព័រ៖ ផ្ទាំងគ្រប់គ្រង · ទំនិញ · ស្តុកចូល/ចេញ · សមតុល្យ · រាប់ស្តុក · របាយការណ៍ · អំពីគម្រោង</li>
+          <li>Chart · របាយការណ៍តាមថ្ងៃ/ខែ/ឆ្នាំ · Export CSV · Print</li>
+          <li>Stock Card · លុបចោលប្រតិបត្តិការ · ចូលគណនីដោយ PIN</li>
           <li>Responsive ចាប់ពី 375px · ភាសាខ្មែរ</li>
           <li>ភ្ជាប់ Google Sheet ផ្ទាល់ + Demo Mode</li>
           <li>Deploy លើ Vercel · កូដក្នុង GitHub</li>
         </ul>
         <div class="links">
-          <a class="btn secondary" href="index.html">បើក</a>
+          <a class="btn secondary" href="dashboard.html">បើក</a>
           <a class="btn secondary" data-repo="tree/main/part3-website" target="_blank" rel="noopener">កូដ</a>
         </div>
       </article>
@@ -213,7 +217,7 @@
       <li><b>សប្តាហ៍ទី ១ — រៀបចំ និង Claude AI</b><span>ជ្រើសប្រធានបទ · Claude Project · Knowledge Base · SOP</span></li>
       <li><b>សប្តាហ៍ទី ២ — Google Sheets</b><span>រចនាសម្ព័ន្ធ Sheet · Formula · PivotTable · Chart · Apps Script Email</span></li>
       <li><b>សប្តាហ៍ទី ៣ — Website</b><span>Web App ៣ ទំព័រ · ភ្ជាប់ API · Deploy Vercel · GitHub</span></li>
-      <li><b>សប្តាហ៍ទី ៤ — ពិនិត្យ និងបង្ហាញ</b><span>កែកំហុស · របាយការណ៍ពីលេខពិត · Portfolio · Video Demo</span></li>
+      <li><b>សប្តាហ៍ទី ៤ — ពិនិត្យ និងបង្ហាញ</b><span>កែកំហុស · Dashboard · របាយការណ៍តាមថ្ងៃ/ខែ/ឆ្នាំ · PIN · Portfolio · Video Demo</span></li>
     </ol>
   </section>
 </main>

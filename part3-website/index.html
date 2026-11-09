@@ -84,6 +84,8 @@
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script src="js/common.js"></script>
+<script src="js/reports.js"></script>
+<script src="js/movements-ui.js"></script>
 <script>
   let all = [];
   const $ = id => document.getElementById(id);
@@ -97,7 +99,7 @@
     $('rows').innerHTML = list.length ? list.map(p => `
       <tr>
         <td class="sku">${esc(p.sku)}</td>
-        <td>${esc(p.name)}</td>
+        <td><button class="name-btn" type="button" data-card="${esc(p.sku)}">${esc(p.name)}</button></td>
         <td>${esc(p.category)}</td>
         <td>${esc(p.unit)}</td>
         <td class="num">${fmtMoney(p.price)}</td>
@@ -105,6 +107,7 @@
         <td class="num"><b>${fmtNum(p.balance)}</b></td>
         <td>${badge(p.status)}</td>
       </tr>`).join('') : '<tr><td colspan="8" class="empty">រកមិនឃើញទំនិញ</td></tr>';
+    $('rows').querySelectorAll('[data-card]').forEach(b => b.addEventListener('click', () => openStockCard(b.dataset.card, load)));
   }
 
   async function load() {
@@ -124,7 +127,14 @@
 
   $('q').addEventListener('input', render);
   $('cat').addEventListener('change', render);
-  $('btnAdd').addEventListener('click', () => $('dlg').showModal());
+  $('btnAdd').addEventListener('click', async () => {
+    try {
+      await Auth.require({ owner: true });
+      $('dlg').showModal();
+    } catch (e) {
+      showError(e);
+    }
+  });
   $('btnCancel').addEventListener('click', () => $('dlg').close());
 
   $('addForm').addEventListener('submit', async ev => {
@@ -137,13 +147,13 @@
     if (f.minStock === '' || !Number.isInteger(Number(f.minStock)) || Number(f.minStock) <= 0) { toast('ស្តុកអប្បបរមាមិនត្រឹមត្រូវ។ សូមបញ្ចូលចំនួនគត់ធំជាង ០។', 'error'); return; }
     $('btnSave').disabled = true;
     try {
-      await Api.addProduct(f);
+      await withAuth(() => Api.addProduct(f), { owner: true });
       $('dlg').close();
       ev.target.reset();
       toast('បន្ថែមទំនិញជោគជ័យ', 'success');
       load();
     } catch (e) {
-      toast(e.message, 'error');
+      showError(e);
     } finally {
       $('btnSave').disabled = false;
     }

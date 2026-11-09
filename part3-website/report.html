@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="km">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>របាយការណ៍ស្តុក — គ្រប់គ្រងស្តុក</title>
+  <meta name="description" content="របាយការណ៍ស្តុកតាមថ្ងៃ ខែ ឆ្នាំ៖ ស្តុកដើមគ្រា ចូល ចេញ ចុងគ្រា និងមូលហេតុស្តុកចេញ · Export CSV · Print។">
+  <meta name="theme-color" content="#1f2a44">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="របាយការណ៍ស្តុក — គ្រប់គ្រងស្តុក">
+  <meta property="og:description" content="របាយការណ៍ស្តុកតាមថ្ងៃ ខែ ឆ្នាំ · Export CSV · Print។">
+  <meta property="og:url" content="https://stock-inventory-part3-website.vercel.app/report.html">
+  <meta property="og:image" content="https://stock-inventory-part3-website.vercel.app/assets/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/logo.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="report">
+<main>
+  <div class="print-only">
+    <h1 id="printTitle">របាយការណ៍ស្តុក</h1>
+    <p id="printMeta"></p>
+  </div>
+
+  <div class="page-head no-print">
+    <div>
+      <h1>របាយការណ៍ស្តុក</h1>
+      <p id="periodText">កំពុងផ្ទុក…</p>
+    </div>
+    <button class="btn secondary" type="button" id="btnPrint">🖨 Print / PDF</button>
+  </div>
+
+  <div class="filters no-print">
+    <div class="seg" id="quick" role="group" aria-label="ចន្លោះពេលរហ័ស">
+      <button type="button" data-range="today">ថ្ងៃនេះ</button>
+      <button type="button" data-range="7d">៧ ថ្ងៃ</button>
+      <button type="button" data-range="month" class="active">ខែនេះ</button>
+      <button type="button" data-range="lastMonth">ខែមុន</button>
+      <button type="button" data-range="year">ឆ្នាំនេះ</button>
+    </div>
+    <div class="field"><label for="from">ពីថ្ងៃ</label><input type="date" id="from"></div>
+    <div class="field"><label for="to">ដល់ថ្ងៃ</label><input type="date" id="to"></div>
+    <div class="field">
+      <label for="by">សង្ខេបតាម</label>
+      <select id="by"><option value="day">ថ្ងៃ</option><option value="month">ខែ</option><option value="year">ឆ្នាំ</option></select>
+    </div>
+    <div class="field">
+      <label for="cat">ប្រភេទ</label>
+      <select id="cat"><option value="">ប្រភេទទាំងអស់</option></select>
+    </div>
+  </div>
+
+  <section class="grid kpis" aria-label="សង្ខេប">
+    <div class="card kpi"><div class="label">ស្តុកចូល</div><div class="value" id="kIn">–</div><div class="sub">ឯកតា</div></div>
+    <div class="card kpi"><div class="label">ស្តុកចេញ</div><div class="value" id="kOut">–</div><div class="sub">ឯកតា</div></div>
+    <div class="card kpi"><div class="label">តម្លៃស្តុកចេញ</div><div class="value" id="kOutValue">–</div><div class="sub">តាមតម្លៃលក់</div></div>
+    <div class="card kpi"><div class="label">ប្រតិបត្តិការ</div><div class="value" id="kCount">–</div><div class="sub">មិនរាប់ការលុបចោល</div></div>
+  </section>
+
+  <div class="section-head">
+    <h2>សង្ខេបតាម<span id="byLabel">ថ្ងៃ</span></h2>
+    <button class="btn secondary sm no-print" type="button" id="csvPeriod">⬇ CSV</button>
+  </div>
+  <div class="table-wrap fit-sm">
+    <table>
+      <thead><tr><th id="periodHead">ថ្ងៃ</th><th class="num">ស្តុកចូល</th><th class="num">ស្តុកចេញ</th><th class="num">តម្លៃស្តុកចេញ</th><th class="num hide-sm">ប្រតិបត្តិការ</th></tr></thead>
+      <tbody id="periodRows"><tr><td colspan="5" class="empty">កំពុងផ្ទុក…</td></tr></tbody>
+      <tfoot><tr><td>សរុប</td><td class="num" id="pIn"></td><td class="num" id="pOut"></td><td class="num" id="pVal"></td><td class="num hide-sm" id="pCount"></td></tr></tfoot>
+    </table>
+  </div>
+
+  <div class="section-head">
+    <h2>តាមទំនិញ</h2>
+    <button class="btn secondary sm no-print" type="button" id="csvProducts">⬇ CSV</button>
+  </div>
+  <div class="table-wrap fit-sm">
+    <table>
+      <thead><tr>
+        <th class="hide-sm">SKU</th><th>ទំនិញ</th><th class="num">ដើមគ្រា</th><th class="num">ចូល</th><th class="num">ចេញ</th>
+        <th class="num">ចុងគ្រា</th><th class="num hide-sm">តម្លៃចេញ</th>
+      </tr></thead>
+      <tbody id="productRows"><tr><td colspan="7" class="empty">កំពុងផ្ទុក…</td></tr></tbody>
+      <tfoot><tr><td class="hide-sm"></td><td>សរុប</td><td class="num" id="tOpen"></td><td class="num" id="tIn"></td><td class="num" id="tOut"></td><td class="num" id="tClose"></td><td class="num hide-sm" id="tVal"></td></tr></tfoot>
+    </table>
+  </div>
+  <p class="hint">ដើមគ្រា = សមតុល្យមុនថ្ងៃចាប់ផ្តើម · ចុងគ្រា = ដើមគ្រា + ចូល − ចេញ · ចុចលើឈ្មោះទំនិញ ដើម្បីមើល Stock Card</p>
+
+  <div class="section-head"><h2>ស្តុកចេញតាមមូលហេតុ</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>មូលហេតុ</th><th class="num">បរិមាណ</th><th class="num">តម្លៃ</th><th class="num">ភាគរយ</th></tr></thead>
+      <tbody id="reasonRows"><tr><td colspan="4" class="empty">កំពុងផ្ទុក…</td></tr></tbody>
+    </table>
+  </div>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
+<script src="js/reports.js"></script>
+<script src="js/movements-ui.js"></script>
+<script>
+  const $ = id => document.getElementById(id);
+  const BY_LABEL = { day: 'ថ្ងៃ', month: 'ខែ', year: 'ឆ្នាំ' };
+  let data = null;
+  let last = null; // លទ្ធផលចុងក្រោយ សម្រាប់ CSV
+
+  function setRange(kind) {
+    const r = Reports.range(kind);
+    $('from').value = Reports.isoDay(r.from);
+    $('to').value = Reports.isoDay(Reports.addDays(r.to, -1));
+    $('by').value = kind === 'year' ? 'month' : 'day';
+    document.querySelectorAll('#quick button').forEach(b => b.classList.toggle('active', b.dataset.range === kind));
+  }
+
+  function render() {
+    if (!data) return;
+    let from = Reports.parseDay($('from').value);
+    let toDay = Reports.parseDay($('to').value);
+    if (isNaN(from) || isNaN(toDay)) return;
+    if (toDay < from) [from, toDay] = [toDay, from];
+    const to = Reports.addDays(toDay, 1);
+    const by = $('by').value;
+    const cat = $('cat').value;
+
+    const sum = Reports.summarize(data, from, to, cat);
+    const ser = Reports.series(data, from, to, by, cat);
+    last = { from, toDay, by, sum, ser };
+
+    const period = `${fmtDay(from)} – ${fmtDay(toDay)}${cat ? ' · ' + cat : ''}`;
+    $('periodText').textContent = period;
+    $('printTitle').textContent = `របាយការណ៍ស្តុក ${period}`;
+    $('printMeta').textContent = `${(window.APP_CONFIG || {}).SHOP_NAME || ''} · បោះពុម្ព ${fmtDate(new Date().toISOString())}`;
+
+    const t = sum.totals;
+    $('kIn').textContent = fmtNum(t.in);
+    $('kOut').textContent = fmtNum(t.out);
+    $('kOutValue').textContent = fmtMoney(t.outValue);
+    $('kCount').textContent = fmtNum(sum.count);
+
+    // តាមពេលវេលា — បង្ហាញតែចន្លោះដែលមានប្រតិបត្តិការ
+    $('byLabel').textContent = BY_LABEL[by];
+    $('periodHead').textContent = BY_LABEL[by];
+    const rows = ser.filter(x => x.count);
+    $('periodRows').innerHTML = rows.length ? rows.map(x => `
+      <tr><td>${x.label}</td><td class="num">${fmtNum(x.in)}</td><td class="num">${fmtNum(x.out)}</td>
+      <td class="num">${fmtMoney(x.outValue)}</td><td class="num hide-sm">${fmtNum(x.count)}</td></tr>`).join('')
+      : '<tr><td colspan="5" class="empty">គ្មានប្រតិបត្តិការក្នុងចន្លោះពេលនេះ</td></tr>';
+    $('pIn').textContent = fmtNum(t.in);
+    $('pOut').textContent = fmtNum(t.out);
+    $('pVal').textContent = fmtMoney(t.outValue);
+    $('pCount').textContent = fmtNum(sum.count);
+
+    // តាមទំនិញ
+    const prows = sum.rows.slice().sort((a, b) => b.out - a.out || a.sku.localeCompare(b.sku));
+    $('productRows').innerHTML = prows.length ? prows.map(r => `
+      <tr>
+        <td class="sku hide-sm">${esc(r.sku)}</td>
+        <td><button class="name-btn" type="button" data-sku="${esc(r.sku)}">${esc(r.name)}</button></td>
+        <td class="num">${fmtNum(r.opening)}</td>
+        <td class="num">${r.in ? fmtNum(r.in) : '–'}</td>
+        <td class="num">${r.out ? fmtNum(r.out) : '–'}</td>
+        <td class="num"><b>${fmtNum(r.closing)}</b></td>
+        <td class="num hide-sm">${r.outValue ? fmtMoney(r.outValue) : '–'}</td>
+      </tr>`).join('') : '<tr><td colspan="7" class="empty">គ្មានទំនិញ</td></tr>';
+    $('tOpen').textContent = fmtNum(t.opening);
+    $('tIn').textContent = fmtNum(t.in);
+    $('tOut').textContent = fmtNum(t.out);
+    $('tClose').textContent = fmtNum(t.closing);
+    $('tVal').textContent = fmtMoney(t.outValue);
+    document.querySelectorAll('#productRows [data-sku]').forEach(btn =>
+      btn.addEventListener('click', () => openStockCard(btn.dataset.sku, load)));
+
+    // តាមមូលហេតុ
+    const reasons = Object.entries(sum.byReason).sort((a, b) => b[1].qty - a[1].qty);
+    $('reasonRows').innerHTML = reasons.length ? reasons.map(([k, v]) => `
+      <tr><td>${esc(k)}</td><td class="num">${fmtNum(v.qty)}</td><td class="num">${fmtMoney(v.value)}</td>
+      <td class="num">${t.out ? Math.round(v.qty / t.out * 100) : 0}%</td></tr>`).join('')
+      : '<tr><td colspan="4" class="empty">គ្មានស្តុកចេញ</td></tr>';
+  }
+
+  async function load() {
+    try {
+      data = await Reports.load();
+      const cats = [...new Set(data.balances.map(b => b.category))];
+      const cur = $('cat').value;
+      $('cat').innerHTML = '<option value="">ប្រភេទទាំងអស់</option>' + cats.map(c => `<option>${esc(c)}</option>`).join('');
+      $('cat').value = cur;
+      render();
+    } catch (e) {
+      $('periodText').textContent = 'មានកំហុស៖ ' + e.message;
+      showError(e);
+    }
+  }
+
+  const fileStamp = () => `${Reports.isoDay(last.from)}_${Reports.isoDay(last.toDay)}`;
+  $('csvPeriod').addEventListener('click', () => {
+    if (!last) return;
+    Reports.downloadCsv(`stock-report-by-${last.by}_${fileStamp()}.csv`, [
+      [BY_LABEL[last.by], 'ស្តុកចូល', 'ស្តុកចេញ', 'តម្លៃស្តុកចេញ ($)', 'ប្រតិបត្តិការ'],
+      ...last.ser.filter(x => x.count).map(x => [x.label, x.in, x.out, x.outValue.toFixed(2), x.count]),
+      ['សរុប', last.sum.totals.in, last.sum.totals.out, last.sum.totals.outValue.toFixed(2), last.sum.count],
+    ]);
+  });
+  $('csvProducts').addEventListener('click', () => {
+    if (!last) return;
+    const t = last.sum.totals;
+    Reports.downloadCsv(`stock-report-products_${fileStamp()}.csv`, [
+      ['SKU', 'ទំនិញ', 'ប្រភេទ', 'ឯកតា', 'ដើមគ្រា', 'ចូល', 'ចេញ', 'ចុងគ្រា', 'តម្លៃ ($)', 'តម្លៃចេញ ($)'],
+      ...last.sum.rows.map(r => [r.sku, r.name, r.category, r.unit, r.opening, r.in, r.out, r.closing, r.price.toFixed(2), r.outValue.toFixed(2)]),
+      ['', 'សរុប', '', '', t.opening, t.in, t.out, t.closing, '', t.outValue.toFixed(2)],
+    ]);
+  });
+  $('btnPrint').addEventListener('click', () => window.print());
+
+  document.querySelectorAll('#quick button').forEach(b => b.addEventListener('click', () => { setRange(b.dataset.range); render(); }));
+  ['from', 'to'].forEach(id => $(id).addEventListener('change', () => {
+    document.querySelectorAll('#quick button').forEach(b => b.classList.remove('active'));
+    render();
+  }));
+  ['by', 'cat'].forEach(id => $(id).addEventListener('change', render));
+
+  setRange('month');
+  load();
+</script>
+</body>
+</html>

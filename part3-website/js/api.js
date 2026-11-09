@@ -7,6 +7,16 @@ const Api = (() => {
   const live = API_URL.length > 0;
 
   const STATUS = { OUT: 'អស់ស្តុក', LOW: 'ជិតអស់', OK: 'គ្រប់គ្រាន់' };
+  const ROLE = { OWNER: 'owner', STAFF: 'staff' };
+  const AUTH_KEY = 'stock-auth';
+  const ALL = 100000; // movements limit សម្រាប់ទាញទិន្នន័យទាំងអស់ (ដំណើរការជាមួយ Backend v1 ផង)
+
+  const session = {
+    get() { try { return JSON.parse(localStorage.getItem(AUTH_KEY)) || null; } catch (_) { return null; } },
+    set(u) { try { localStorage.setItem(AUTH_KEY, JSON.stringify(u)); } catch (_) { /* ignore */ } },
+    clear() { try { localStorage.removeItem(AUTH_KEY); } catch (_) { /* ignore */ } },
+  };
+  const authError = msg => Object.assign(new Error(msg), { code: 'AUTH' });
   const statusOf = (bal, min) => (bal <= 0 ? STATUS.OUT : bal <= min ? STATUS.LOW : STATUS.OK);
 
   /* ---------------- Live (Apps Script) ---------------- */
@@ -22,12 +32,18 @@ const Api = (() => {
       method: 'POST',
       redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ ...body, token: (session.get() || {}).token || '' }),
     });
     return unwrap(await res.json());
   }
   function unwrap(json) {
-    if (!json.ok) throw new Error(json.error || 'មានកំហុស');
+    if (!json.ok) {
+      const msg = String(json.error || 'មានកំហុស');
+      if (msg.startsWith('Unknown action')) {
+        throw Object.assign(new Error('មុខងារនេះត្រូវការ Code.gs ថ្មី។ សូម Deploy version ថ្មីក្នុង Apps Script។'), { code: 'OLD_BACKEND' });
+      }
+      throw Object.assign(new Error(msg), { code: json.code || '' });
+    }
     return json.data;
   }
 
@@ -121,10 +137,22 @@ const Api = (() => {
   }
   const wait = (v) => new Promise(r => setTimeout(() => r(v), 150));
 
+  // Demo PIN — បង្ហាញក្នុងប្រអប់ចូលគណនី (Demo Mode ប៉ុណ្ណោះ)
+  const DEMO_STAFF = [
+    { pin: '1111', name: 'ម្ចាស់ហាង (Demo)', role: ROLE.OWNER },
+    { pin: '2222', name: 'អ្នកលក់ (Demo)', role: ROLE.STAFF },
+  ];
+  function demoUser(needOwner) {
+    const u = session.get();
+    if (!u || !u.token) throw authError('សូមចូលគណនីជាមុនសិន។');
+    if (needOwner && u.role !== ROLE.OWNER) throw new Error('មានតែម្ចាស់ហាងទេ ដែលអាចធ្វើសកម្មភាពនេះ។');
+    return u;
+  }
+
   function demoBalances() {
     const db = load();
     const t = {};
-    db.movements.forEach(m => {
+    db.movements.filter(m => !m.voided).forEach(m => {
       t[m.sku] = t[m.sku] || { in: 0, out: 0 };
       t[m.sku][m.type] += m.qty;
     });
@@ -146,7 +174,7 @@ const Api = (() => {
     if (type === 'out' && qty > cur) throw new Error(`ស្តុកមិនគ្រប់គ្រាន់។ សមតុល្យបច្ចុប្បន្ន ${cur} ${p.unit}។`);
     const id = `${type.toUpperCase()}-${Date.now()}`;
     db.movements.push({ id, type, date: new Date().toISOString(), sku: p.sku, qty,
-      party: type === 'in' ? (b.supplier || '') : (b.reason || 'លក់'), note: b.note || '' });
+      party: type === 'in' ? (b.supplier || '') : (b.reason || 'លក់'), note: b.note || '', by: demoUser().name });
     save();
     const balance = type === 'in' ? cur + qty : cur - qty;
     return { id, balance, status: statusOf(balance, p.minStock) };
@@ -156,9 +184,55 @@ const Api = (() => {
     products: () => wait(load().products.slice()),
     balance: () => wait(demoBalances()),
     movements: (limit = 20) => wait(load().movements.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, limit)),
+    info: () => wait({ version: 2, auth: true }),
+    login: async pin => {
+      const u = DEMO_STAFF.find(s => s.pin === String(pin).trim());
+      if (!u) throw authError('PIN មិនត្រឹមត្រូវ។ សូមបញ្ចូលម្តងទៀត។');
+      return wait({ token: 'demo-' + Date.now(), name: u.name, role: u.role });
+    },
     stockIn: async b => wait(demoMove('in', b)),
     stockOut: async b => wait(demoMove('out', b)),
+    voidMovement: async (id, reason) => {
+      const user = demoUser(true);
+      if (!String(reason || '').trim()) throw new Error('សូមបញ្ចូលមូលហេតុនៃការលុបចោល។');
+      const db = load();
+      const m = db.movements.find(x => x.id === id);
+      if (!m) throw new Error(`រកមិនឃើញប្រតិបត្តិការ "${id}"។`);
+      if (m.voided) throw new Error('ប្រតិបត្តិការនេះត្រូវបានលុបចោលរួចហើយ។');
+      const cur = demoBalances().find(x => x.sku === m.sku);
+      if (m.type === 'in' && cur.balance - m.qty < 0) {
+        throw new Error(`មិនអាចលុបចោលបានទេ៖ សមតុល្យនឹងក្លាយជា ${cur.balance - m.qty}។ សូមលុបចោលស្តុកចេញដែលពាក់ព័ន្ធជាមុនសិន។`);
+      }
+      m.voided = true;
+      m.voidNote = `${reason.trim()} · ${user.name} · ${new Date().toLocaleString('en-GB')}`;
+      save();
+      const after = demoBalances().find(x => x.sku === m.sku);
+      return wait({ id, sku: m.sku, balance: after.balance, status: after.status });
+    },
+    stockCount: async (items, note) => {
+      const user = demoUser();
+      if (!items.length) throw new Error('មិនមានទំនិញដែលបានរាប់។');
+      const bal = Object.fromEntries(demoBalances().map(x => [x.sku, x]));
+      const db = load();
+      const now = Date.now();
+      const changes = [];
+      items.forEach((it, i) => {
+        const cur = bal[it.sku];
+        const counted = Number(it.counted);
+        if (!cur) throw new Error(`រកមិនឃើញទំនិញ SKU "${it.sku}"។`);
+        if (!Number.isInteger(counted) || counted < 0) throw new Error(`ចំនួនរាប់បានរបស់ ${it.sku} មិនត្រឹមត្រូវ។`);
+        const diff = counted - cur.balance;
+        if (!diff) return;
+        const type = diff > 0 ? 'in' : 'out';
+        db.movements.push({ id: `${type.toUpperCase()}-${now + i}`, type, date: new Date(now).toISOString(), sku: it.sku,
+          qty: Math.abs(diff), party: 'កែតម្រូវ', note: `${note || 'រាប់ស្តុក'} · ប្រព័ន្ធ ${cur.balance} → រាប់បាន ${counted}`, by: user.name });
+        changes.push({ sku: it.sku, system: cur.balance, counted, diff });
+      });
+      save();
+      return wait({ counted: items.length, adjusted: changes.length, changes });
+    },
     addProduct: async b => {
+      demoUser(true);
       const db = load();
       const sku = String(b.sku || '').trim().toUpperCase();
       if (!sku || !b.name || !b.unit) throw new Error('SKU ឈ្មោះទំនិញ និងឯកតា ជាព័ត៌មានចាំបាច់។');
@@ -173,16 +247,22 @@ const Api = (() => {
     reset: () => { memory = seed(); save(); },
   };
 
-  if (!live) return { live, STATUS, ...demo };
-
-  return {
-    live, STATUS,
+  const shared = { live, STATUS, ROLE, session, allMovements: () => api.movements(ALL) };
+  let infoCache = null;
+  const api = !live ? { ...shared, ...demo } : {
+    ...shared,
+    // Backend v1 មិនមាន action=info → ចាត់ទុកជា version 1 (គ្មាន PIN / លុបចោល / រាប់ស្តុក)
+    info: () => infoCache || (infoCache = liveGet('info').catch(() => ({ version: 1, auth: false }))),
+    login: pin => livePost({ action: 'login', pin }),
     products: () => liveGet('products'),
     balance: () => liveGet('balance'),
     movements: (limit = 20) => liveGet('movements', { limit }),
     stockIn: b => livePost({ action: 'stockIn', ...b }),
     stockOut: b => livePost({ action: 'stockOut', ...b }),
+    stockCount: (items, note) => livePost({ action: 'stockCount', items, note }),
+    voidMovement: (id, reason) => livePost({ action: 'void', id, reason }),
     addProduct: b => livePost({ action: 'addProduct', ...b }),
     reset: () => {},
   };
+  return api;
 })();
