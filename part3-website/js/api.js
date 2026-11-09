@@ -118,10 +118,12 @@ const Api = (() => {
     addProduct: async b => {
       const db = load();
       const sku = String(b.sku || '').trim().toUpperCase();
-      if (!sku || !b.name) throw new Error('SKU និងឈ្មោះទំនិញ ជាព័ត៌មានចាំបាច់។');
+      if (!sku || !b.name || !b.unit) throw new Error('SKU ឈ្មោះទំនិញ និងឯកតា ជាព័ត៌មានចាំបាច់។');
+      const price = Number(b.price), minStock = Number(b.minStock);
+      if (b.price === '' || !Number.isFinite(price) || price < 0) throw new Error('តម្លៃមិនត្រឹមត្រូវ។');
+      if (!Number.isInteger(minStock) || minStock <= 0) throw new Error('ស្តុកអប្បបរមាមិនត្រឹមត្រូវ។ សូមបញ្ចូលចំនួនគត់ធំជាង ០។');
       if (db.products.some(p => p.sku === sku)) throw new Error(`SKU "${sku}" មានរួចហើយ។`);
-      db.products.push({ sku, name: b.name, category: b.category || 'ផ្សេងៗ', unit: b.unit || 'ឯកតា',
-        price: Number(b.price) || 0, minStock: Number(b.minStock) || 0 });
+      db.products.push({ sku, name: b.name, category: b.category || 'ផ្សេងៗ', unit: b.unit, price, minStock });
       save();
       return wait({ sku });
     },

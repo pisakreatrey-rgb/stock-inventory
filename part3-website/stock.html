@@ -96,7 +96,8 @@
     const after = type === 'in' ? p.balance + qty : p.balance - qty;
     $('preview').innerHTML = `សមតុល្យបច្ចុប្បន្ន <b>${fmtNum(p.balance)}</b> ${esc(p.unit)} ${badge(p.status)}` +
       (qty ? `<br>ក្រោយរក្សាទុក៖ <b style="color:${after < 0 ? 'var(--out)' : 'inherit'}">${fmtNum(after)}</b> ${esc(p.unit)}` +
-        (after < 0 ? ' — លើសសមតុល្យ' : '') : '');
+        (after < 0 ? ' — លើសសមតុល្យ មិនអាចរក្សាទុកបានទេ' : '') : '');
+    $('btnSubmit').disabled = after < 0;
   }
 
   async function loadProducts(keep) {
@@ -131,6 +132,11 @@
     f.qty = Number(toLatinDigits(f.qty).trim());
     if (!f.sku) { toast('សូមជ្រើសទំនិញ។', 'error'); return; }
     if (!Number.isInteger(f.qty) || f.qty <= 0) { toast('បរិមាណមិនត្រឹមត្រូវ។ សូមបញ្ចូលចំនួនគត់ធំជាង ០។', 'error'); return; }
+    const cur = balances.find(b => b.sku === f.sku);
+    if (type === 'out' && cur && f.qty > cur.balance) {
+      toast(`ស្តុកមិនគ្រប់គ្រាន់។ សមតុល្យបច្ចុប្បន្ន ${fmtNum(cur.balance)} ${cur.unit}។`, 'error');
+      return;
+    }
     const btn = $('btnSubmit');
     btn.disabled = true;
     btn.textContent = 'កំពុងរក្សាទុក…';
