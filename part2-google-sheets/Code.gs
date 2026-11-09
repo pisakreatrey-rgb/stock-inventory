@@ -146,7 +146,7 @@ function statusOf_(balance, min) {
 function getMovements_(limit) {
   const map = (type, extraKey) => r => ({
     id: r.ID, type, date: toIso_(r.Date), sku: String(r.SKU),
-    qty: Number(r.Qty) || 0, party: r[extraKey] || '', note: r.Note || '',
+    qty: Number(r.Qty) || 0, party: r[extraKey] || '', note: String(r.Note ?? ''),
   });
   const all = rows_(SHEETS.IN).map(map('in', 'Supplier'))
     .concat(rows_(SHEETS.OUT).map(map('out', 'Reason')));
@@ -174,11 +174,18 @@ function findProduct_(sku) {
   return p;
 }
 
+/** Append a row and keep Note (column F) as plain text so "0012" stays "0012". */
+function appendMovement_(sheetName, row) {
+  const sh = sheet_(sheetName);
+  sh.appendRow(row);
+  sh.getRange(sh.getLastRow(), 6).setNumberFormat('@').setValue(row[5]);
+}
+
 function addStockIn_(b) {
   const p = findProduct_(b.sku);
   const qty = validateQty_(b.qty);
   const id = 'IN-' + Date.now();
-  sheet_(SHEETS.IN).appendRow([id, new Date(), p.sku, qty, b.supplier || '', b.note || '']);
+  appendMovement_(SHEETS.IN, [id, new Date(), p.sku, qty, b.supplier || '', String(b.note || '')]);
   const bal = getBalances_().find(x => x.sku === p.sku);
   return { id, balance: bal.balance, status: bal.status };
 }
@@ -191,7 +198,7 @@ function addStockOut_(b) {
     throw new Error('ស្តុកមិនគ្រប់គ្រាន់។ សមតុល្យបច្ចុប្បន្ន ' + before.balance + ' ' + p.unit + '។');
   }
   const id = 'OUT-' + Date.now();
-  sheet_(SHEETS.OUT).appendRow([id, new Date(), p.sku, qty, b.reason || 'លក់', b.note || '']);
+  appendMovement_(SHEETS.OUT, [id, new Date(), p.sku, qty, b.reason || 'លក់', String(b.note || '')]);
 
   const after = before.balance - qty;
   const status = statusOf_(after, p.minStock);
@@ -204,12 +211,14 @@ function addStockOut_(b) {
 
 function addProduct_(b) {
   const sku = String(b.sku || '').trim().toUpperCase();
-  if (!sku || !b.name) throw new Error('SKU និងឈ្មោះទំនិញ ជាព័ត៌មានចាំបាច់។');
+  if (!sku || !b.name || !b.unit) throw new Error('SKU ឈ្មោះទំនិញ និងឯកតា ជាព័ត៌មានចាំបាច់។');
+  const price = Number(b.price), minStock = Number(b.minStock);
+  if (b.price === '' || b.price == null || !isFinite(price) || price < 0) throw new Error('តម្លៃមិនត្រឹមត្រូវ។');
+  if (!(minStock > 0) || Math.floor(minStock) !== minStock) {
+    throw new Error('ស្តុកអប្បបរមាមិនត្រឹមត្រូវ។ សូមបញ្ចូលចំនួនគត់ធំជាង ០។');
+  }
   if (getProducts_().some(p => p.sku === sku)) throw new Error('SKU "' + sku + '" មានរួចហើយ។');
-  sheet_(SHEETS.PRODUCTS).appendRow([
-    sku, b.name, b.category || 'ផ្សេងៗ', b.unit || 'ឯកតា',
-    Number(b.price) || 0, Number(b.minStock) || 0,
-  ]);
+  sheet_(SHEETS.PRODUCTS).appendRow([sku, b.name, b.category || 'ផ្សេងៗ', b.unit, price, minStock]);
   return { sku };
 }
 
@@ -253,7 +262,7 @@ function sendAlertEmail_(items, kind) {
       .map(h => '<th style="padding:8px;border:1px solid #ddd">' + h + '</th>').join('') +
     '</tr>' + rows + '</table>' +
     '<p><b>សកម្មភាព៖</b> សូមអនុម័តការបញ្ជាទិញក្នុងរយៈពេល ២៤ ម៉ោង។</p>' +
-    (appUrl ? '<p><a href="' + appUrl + '/balance.html">មើលតារាងសមតុល្យ</a></p>' : '') +
+    (appUrl ? '<p><a href="' + appUrl.replace(/\/+$/, '') + '/balance.html">មើលតារាងសមតុល្យ</a></p>' : '') +
     '<p style="color:#667085;font-size:13px">Email នេះផ្ញើដោយស្វ័យប្រវត្តិពី Google Apps Script — ' + shop + '</p></div>';
 
   MailApp.sendEmail({
@@ -347,6 +356,8 @@ function setupSheets() {
   });
   sheet_(SHEETS.IN).getRange('B:B').setNumberFormat('dd/mm/yyyy hh:mm');
   sheet_(SHEETS.OUT).getRange('B:B').setNumberFormat('dd/mm/yyyy hh:mm');
+  sheet_(SHEETS.IN).getRange('F:F').setNumberFormat('@');
+  sheet_(SHEETS.OUT).getRange('F:F').setNumberFormat('@');
   sheet_(SHEETS.PRODUCTS).getRange('E:E').setNumberFormat('$#,##0.00');
 
   seedSampleData_();

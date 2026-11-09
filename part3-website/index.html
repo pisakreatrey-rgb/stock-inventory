@@ -51,7 +51,7 @@
     <h2>បន្ថែមទំនិញថ្មី</h2>
     <div class="row">
       <div class="field"><label for="fSku">SKU (ចាំបាច់)</label><input id="fSku" name="sku" required placeholder="P011"></div>
-      <div class="field"><label for="fUnit">ឯកតា</label><input id="fUnit" name="unit" placeholder="ដប, កេស, ដុំ…"></div>
+      <div class="field"><label for="fUnit">ឯកតា (ចាំបាច់)</label><input id="fUnit" name="unit" required placeholder="ដប, កេស, ដុំ…"></div>
     </div>
     <div class="field"><label for="fName">ឈ្មោះទំនិញ (ចាំបាច់)</label><input id="fName" name="name" required></div>
     <div class="field">
@@ -61,8 +61,8 @@
       </select>
     </div>
     <div class="row">
-      <div class="field"><label for="fPrice">តម្លៃ ($)</label><input id="fPrice" name="price" inputmode="decimal" placeholder="0.00"></div>
-      <div class="field"><label for="fMin">ស្តុកអប្បបរមា</label><input id="fMin" name="minStock" inputmode="numeric" placeholder="10"></div>
+      <div class="field"><label for="fPrice">តម្លៃ ($) (ចាំបាច់)</label><input id="fPrice" name="price" inputmode="decimal" required placeholder="0.00"></div>
+      <div class="field"><label for="fMin">ស្តុកអប្បបរមា (ចាំបាច់)</label><input id="fMin" name="minStock" inputmode="numeric" required placeholder="10"></div>
     </div>
     <div class="dialog-actions">
       <button class="btn secondary" type="button" id="btnCancel">បោះបង់</button>
@@ -120,9 +120,11 @@
   $('addForm').addEventListener('submit', async ev => {
     ev.preventDefault();
     const f = Object.fromEntries(new FormData(ev.target));
-    if (!f.sku.trim() || !f.name.trim()) { toast('សូមបំពេញ SKU និងឈ្មោះទំនិញ។', 'error'); return; }
-    f.price = toLatinDigits(f.price);
-    f.minStock = toLatinDigits(f.minStock);
+    if (!f.sku.trim() || !f.name.trim() || !f.unit.trim()) { toast('សូមបំពេញ SKU ឈ្មោះទំនិញ និងឯកតា។', 'error'); return; }
+    f.price = toLatinDigits(f.price).trim();
+    f.minStock = toLatinDigits(f.minStock).trim();
+    if (f.price === '' || !Number.isFinite(Number(f.price)) || Number(f.price) < 0) { toast('តម្លៃមិនត្រឹមត្រូវ។ សូមបញ្ចូលលេខ ≥ 0 (ឧ. 0.60)។', 'error'); return; }
+    if (f.minStock === '' || !Number.isInteger(Number(f.minStock)) || Number(f.minStock) <= 0) { toast('ស្តុកអប្បបរមាមិនត្រឹមត្រូវ។ សូមបញ្ចូលចំនួនគត់ធំជាង ០។', 'error'); return; }
     $('btnSave').disabled = true;
     try {
       await Api.addProduct(f);

@@ -27,16 +27,17 @@
     </select>
   </div>
 
-  <div class="table-wrap">
+  <div class="table-wrap fit-sm">
     <table>
       <thead>
         <tr>
-          <th>SKU</th><th>ទំនិញ</th><th class="num">ចូល</th><th class="num">ចេញ</th>
-          <th class="num">សមតុល្យ</th><th class="num">អប្បបរមា</th><th>ស្ថានភាព</th><th class="num">តម្លៃ</th><th></th>
+          <th class="hide-sm">SKU</th><th>ទំនិញ</th><th class="num hide-sm">ចូល</th><th class="num hide-sm">ចេញ</th>
+          <th class="num">សមតុល្យ</th><th class="num hide-sm">អប្បបរមា</th><th>ស្ថានភាព</th>
+          <th class="num" title="ស្តុកអប្បបរមា × ២ − សមតុល្យ">គួរបញ្ជាទិញ</th><th class="num hide-sm">តម្លៃ</th><th class="hide-sm"></th>
         </tr>
       </thead>
-      <tbody id="rows"><tr><td colspan="9" class="empty">កំពុងផ្ទុក…</td></tr></tbody>
-      <tfoot><tr><td colspan="2">សរុប</td><td class="num" id="tIn"></td><td class="num" id="tOut"></td><td class="num" id="tBal"></td><td></td><td></td><td class="num" id="tVal"></td><td></td></tr></tfoot>
+      <tbody id="rows"><tr><td colspan="10" class="empty">កំពុងផ្ទុក…</td></tr></tbody>
+      <tfoot><tr><td class="hide-sm"></td><td>សរុប</td><td class="num hide-sm" id="tIn"></td><td class="num hide-sm" id="tOut"></td><td class="num" id="tBal"></td><td class="hide-sm"></td><td></td><td></td><td class="num hide-sm" id="tVal"></td><td class="hide-sm"></td></tr></tfoot>
     </table>
   </div>
 </main>
@@ -59,21 +60,24 @@
 
     $('rows').innerHTML = list.length ? list.map(p => {
       const cls = statusClass(p.status);
+      // KB: ចំនួនគួរបញ្ជាទិញ = ស្តុកអប្បបរមា × ២ − សមតុល្យ (សម្រាប់តែទំនិញជិតអស់ / អស់ស្តុក)
+      const reorder = cls === 'ok' ? 0 : Math.max(p.minStock * 2 - p.balance, 0);
       const pct = Math.max(0, Math.min(100, p.minStock ? (p.balance / (p.minStock * 2)) * 100 : 100));
       const action = cls === 'ok' ? '' :
         `<a class="btn secondary" style="min-height:36px;padding:.25rem .7rem;font-size:14px" href="stock.html?type=in&sku=${encodeURIComponent(p.sku)}">បញ្ចូលស្តុក</a>`;
       return `<tr>
-        <td class="sku">${esc(p.sku)}</td>
+        <td class="sku hide-sm">${esc(p.sku)}</td>
         <td>${esc(p.name)}<div class="bar" title="សមតុល្យធៀបនឹង ២×អប្បបរមា"><span style="width:${pct}%;background:${barColor[cls]}"></span></div></td>
-        <td class="num">${fmtNum(p.totalIn)}</td>
-        <td class="num">${fmtNum(p.totalOut)}</td>
+        <td class="num hide-sm">${fmtNum(p.totalIn)}</td>
+        <td class="num hide-sm">${fmtNum(p.totalOut)}</td>
         <td class="num"><b>${fmtNum(p.balance)}</b> <span style="color:var(--muted);font-size:14px">${esc(p.unit)}</span></td>
-        <td class="num">${fmtNum(p.minStock)}</td>
+        <td class="num hide-sm">${fmtNum(p.minStock)}</td>
         <td>${badge(p.status)}</td>
-        <td class="num">${fmtMoney(p.value)}</td>
-        <td>${action}</td>
+        <td class="num">${reorder ? `<a href="stock.html?type=in&sku=${encodeURIComponent(p.sku)}" title="បញ្ចូលស្តុក"><b>${fmtNum(reorder)}</b></a>` : '–'}</td>
+        <td class="num hide-sm">${fmtMoney(p.value)}</td>
+        <td class="hide-sm">${action}</td>
       </tr>`;
-    }).join('') : '<tr><td colspan="9" class="empty">រកមិនឃើញទំនិញ</td></tr>';
+    }).join('') : '<tr><td colspan="10" class="empty">រកមិនឃើញទំនិញ</td></tr>';
 
     const sum = k => list.reduce((s, p) => s + p[k], 0);
     $('tIn').textContent = fmtNum(sum('totalIn'));
@@ -83,13 +87,13 @@
   }
 
   async function load() {
-    $('rows').innerHTML = '<tr><td colspan="9" class="empty">កំពុងផ្ទុក…</td></tr>';
+    $('rows').innerHTML = '<tr><td colspan="10" class="empty">កំពុងផ្ទុក…</td></tr>';
     try {
       all = await Api.balance();
       $('updated').textContent = 'ធ្វើបច្ចុប្បន្នភាព ' + fmtDate(new Date().toISOString());
       render();
     } catch (e) {
-      $('rows').innerHTML = `<tr><td colspan="9" class="empty">មានកំហុស៖ ${esc(e.message)}</td></tr>`;
+      $('rows').innerHTML = `<tr><td colspan="10" class="empty">មានកំហុស៖ ${esc(e.message)}</td></tr>`;
     }
   }
 
