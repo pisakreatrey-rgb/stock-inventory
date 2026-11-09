@@ -39,6 +39,7 @@ function renderShell() {
     ['index.html', 'products', 'បញ្ជីទំនិញ'],
     ['stock.html', 'stock', 'ស្តុកចូល/ចេញ'],
     ['balance.html', 'balance', 'សមតុល្យ'],
+    ['portfolio.html', 'portfolio', 'អំពីគម្រោង'],
   ];
   const header = document.createElement('header');
   header.innerHTML = `
@@ -55,7 +56,16 @@ function renderShell() {
   document.body.prepend(header);
 
   const footer = document.createElement('footer');
-  footer.innerHTML = `${esc(shop)} · Stock &amp; Inventory · Google Sheets + Apps Script`;
+  const cfg = window.APP_CONFIG || {};
+  const year = new Date().getFullYear();
+  footer.innerHTML = `
+    <div>© ${year} ${esc(shop)} · Stock &amp; Inventory · Google Sheets + Apps Script</div>
+    <div class="foot-links">
+      ${cfg.AUTHOR ? `<span>រៀបចំដោយ ${esc(cfg.AUTHOR)}</span>` : ''}
+      <a href="portfolio.html">អំពីគម្រោង</a>
+      ${cfg.REPO_URL ? `<a href="${esc(cfg.REPO_URL)}" target="_blank" rel="noopener">GitHub</a>` : ''}
+      ${cfg.VIDEO_URL ? `<a href="${esc(cfg.VIDEO_URL)}" target="_blank" rel="noopener">Video Demo</a>` : ''}
+    </div>`;
   document.body.appendChild(footer);
 }
 

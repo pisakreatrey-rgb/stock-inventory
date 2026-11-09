@@ -1,6 +1,6 @@
 <img src="../part3-website/assets/logo.png" alt="ហាង ស្តុកល្អ" width="64">
 
-# Prompt Log — បញ្ជី Prompt ដែលបានប្រើ (១៧ Prompt)
+# Prompt Log — បញ្ជី Prompt ដែលបានប្រើ (១៩ Prompt)
 
 > ប្រើក្នុង Claude Project «ជំនួយការគ្រប់គ្រងស្តុក» ដែលមាន Knowledge Base `01-knowledge-base.md`។
 
@@ -23,6 +23,8 @@
 | 15 | កែកូដតាមលទ្ធផលពិនិត្យ | «https://github.com/pisakreatrey-rgb/stock-inventory» (ផ្ញើ Repo ឲ្យកែចំណុចខាងលើ) | PR #1 — `stock.html`, `balance.html`, `index.html`, `Code.gs` |
 | 16 | ពិនិត្យលក្ខខណ្ឌគម្រោង | «ជួយពិនិត្យមើលលក្ខខណ្ឌ តើគំរោងយើងគ្រប់នៅ» + រូបភាពលក្ខខណ្ឌរួម ៦ ចំណុច | បញ្ជីអ្វីដែលខ្វះ៖ Logo, Sheet ≥ ២០ ជួរ, របាយការណ៍ពីលេខពិត, Prompt Log |
 | 17 | បំពេញលក្ខខណ្ឌ | «ok» (យល់ព្រមឲ្យកែ) | ទំនិញ ២០ មុខ (`seedExtraData`), `04-monthly-report.md` ថ្មីពីលេខពិត, Prompt Log នេះ, Logo |
+| 18 | ប៉ាន់ស្មានពិន្ទុ | «ជួយពិនិត្យមើលតើ project នេះអាចទទួលបានប៉ុន្មានពិន្ទុ ហើយត្រូវបន្ថែមអ្វីទៀត មើលទៅបែបអាជីព» + រូបតារាងពិន្ទុ | ប៉ាន់ស្មាន 70–75/100 · ខ្វះ Video, Portfolio, Checkpoint, រូបថតអេក្រង់ |
+| 19 | Portfolio + Checkpoint | «ធ្វើ ចំណុចទី ២, ៥, ៦» | `portfolio.html`, `CHECKPOINTS.md`, README Badge, Social preview (`og-image.png`) |
 
 > **ចំណាំ៖** Prompt #11 សរសេរ «Netlify» ព្រោះពេលនោះគ្រោងប្រើ Netlify។ ក្រោយមកបាន Deploy លើ **Vercel** វិញ (ឥតគិតថ្លៃដូចគ្នា)។
 
