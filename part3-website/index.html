@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="km">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>បញ្ជីទំនិញ — គ្រប់គ្រងស្តុក</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="products">
+<main>
+  <div class="page-head">
+    <div>
+      <h1>បញ្ជីទំនិញ</h1>
+      <p>ទំនិញទាំងអស់ក្នុងហាង/ឃ្លាំង ជាមួយសមតុល្យបច្ចុប្បន្ន</p>
+    </div>
+    <button class="btn" id="btnAdd" type="button">＋ បន្ថែមទំនិញ</button>
+  </div>
+
+  <section class="grid kpis" aria-label="សង្ខេប">
+    <div class="card kpi"><div class="label">ចំនួនមុខទំនិញ</div><div class="value" id="kCount">–</div></div>
+    <div class="card kpi"><div class="label">តម្លៃស្តុកសរុប</div><div class="value" id="kValue">–</div></div>
+    <div class="card kpi low"><div class="label">ជិតអស់</div><div class="value" id="kLow">–</div></div>
+    <div class="card kpi out"><div class="label">អស់ស្តុក</div><div class="value" id="kOut">–</div></div>
+  </section>
+
+  <div class="toolbar">
+    <input class="grow" id="q" type="search" placeholder="ស្វែងរកតាមឈ្មោះ ឬ SKU…" aria-label="ស្វែងរក">
+    <select id="cat" aria-label="ប្រភេទ" style="width:auto;min-width:160px">
+      <option value="">ប្រភេទទាំងអស់</option>
+    </select>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>SKU</th><th>ទំនិញ</th><th>ប្រភេទ</th><th>ឯកតា</th>
+          <th class="num">តម្លៃ</th><th class="num">អប្បបរមា</th><th class="num">សមតុល្យ</th><th>ស្ថានភាព</th>
+        </tr>
+      </thead>
+      <tbody id="rows"><tr><td colspan="8" class="empty">កំពុងផ្ទុក…</td></tr></tbody>
+    </table>
+  </div>
+</main>
+
+<dialog id="dlg">
+  <form id="addForm" method="dialog" novalidate>
+    <h2>បន្ថែមទំនិញថ្មី</h2>
+    <div class="row">
+      <div class="field"><label for="fSku">SKU (ចាំបាច់)</label><input id="fSku" name="sku" required placeholder="P011"></div>
+      <div class="field"><label for="fUnit">ឯកតា</label><input id="fUnit" name="unit" placeholder="ដប, កេស, ដុំ…"></div>
+    </div>
+    <div class="field"><label for="fName">ឈ្មោះទំនិញ (ចាំបាច់)</label><input id="fName" name="name" required></div>
+    <div class="field">
+      <label for="fCat">ប្រភេទ</label>
+      <select id="fCat" name="category">
+        <option>ភេសជ្ជៈ</option><option>អាហារ</option><option>គ្រឿងទេស</option><option>អនាម័យ</option><option>ផ្សេងៗ</option>
+      </select>
+    </div>
+    <div class="row">
+      <div class="field"><label for="fPrice">តម្លៃ ($)</label><input id="fPrice" name="price" inputmode="decimal" placeholder="0.00"></div>
+      <div class="field"><label for="fMin">ស្តុកអប្បបរមា</label><input id="fMin" name="minStock" inputmode="numeric" placeholder="10"></div>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn secondary" type="button" id="btnCancel">បោះបង់</button>
+      <button class="btn" type="submit" id="btnSave">រក្សាទុក</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
+<script>
+  let all = [];
+  const $ = id => document.getElementById(id);
+
+  function render() {
+    const q = $('q').value.trim().toLowerCase();
+    const cat = $('cat').value;
+    const list = all.filter(p =>
+      (!cat || p.category === cat) &&
+      (!q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)));
+    $('rows').innerHTML = list.length ? list.map(p => `
+      <tr>
+        <td class="sku">${esc(p.sku)}</td>
+        <td>${esc(p.name)}</td>
+        <td>${esc(p.category)}</td>
+        <td>${esc(p.unit)}</td>
+        <td class="num">${fmtMoney(p.price)}</td>
+        <td class="num">${fmtNum(p.minStock)}</td>
+        <td class="num"><b>${fmtNum(p.balance)}</b></td>
+        <td>${badge(p.status)}</td>
+      </tr>`).join('') : '<tr><td colspan="8" class="empty">រកមិនឃើញទំនិញ</td></tr>';
+  }
+
+  async function load() {
+    try {
+      all = await Api.balance();
+      $('kCount').textContent = fmtNum(all.length);
+      $('kValue').textContent = fmtMoney(all.reduce((s, p) => s + p.value, 0));
+      $('kLow').textContent = all.filter(p => p.status === Api.STATUS.LOW).length;
+      $('kOut').textContent = all.filter(p => p.status === Api.STATUS.OUT).length;
+      const cats = [...new Set(all.map(p => p.category))];
+      $('cat').innerHTML = '<option value="">ប្រភេទទាំងអស់</option>' + cats.map(c => `<option>${esc(c)}</option>`).join('');
+      render();
+    } catch (e) {
+      $('rows').innerHTML = `<tr><td colspan="8" class="empty">មានកំហុស៖ ${esc(e.message)}</td></tr>`;
+    }
+  }
+
+  $('q').addEventListener('input', render);
+  $('cat').addEventListener('change', render);
+  $('btnAdd').addEventListener('click', () => $('dlg').showModal());
+  $('btnCancel').addEventListener('click', () => $('dlg').close());
+
+  $('addForm').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const f = Object.fromEntries(new FormData(ev.target));
+    if (!f.sku.trim() || !f.name.trim()) { toast('សូមបំពេញ SKU និងឈ្មោះទំនិញ។', 'error'); return; }
+    f.price = toLatinDigits(f.price);
+    f.minStock = toLatinDigits(f.minStock);
+    $('btnSave').disabled = true;
+    try {
+      await Api.addProduct(f);
+      $('dlg').close();
+      ev.target.reset();
+      toast('បន្ថែមទំនិញជោគជ័យ', 'success');
+      load();
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      $('btnSave').disabled = false;
+    }
+  });
+
+  load();
+</script>
+</body>
+</html>

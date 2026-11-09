@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="km">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ស្តុកចូល/ចេញ — គ្រប់គ្រងស្តុក</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="stock">
+<main>
+  <div class="page-head">
+    <div>
+      <h1>ស្តុកចូល / ស្តុកចេញ</h1>
+      <p>កត់ត្រាទំនិញទទួលពីអ្នកផ្គត់ផ្គង់ ឬលក់/បញ្ចេញ</p>
+    </div>
+  </div>
+
+  <div class="grid two-col">
+    <section class="card">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" data-type="in" class="active" aria-selected="true">⬇ ស្តុកចូល</button>
+        <button type="button" role="tab" data-type="out" aria-selected="false">⬆ ស្តុកចេញ</button>
+      </div>
+
+      <form id="moveForm" novalidate>
+        <div class="field">
+          <label for="sku">ទំនិញ (ចាំបាច់)</label>
+          <select id="sku" name="sku" required><option value="">កំពុងផ្ទុក…</option></select>
+        </div>
+        <div class="preview" id="preview">ជ្រើសទំនិញដើម្បីមើលសមតុល្យ</div>
+        <div class="field">
+          <label for="qty">បរិមាណ (ចាំបាច់)</label>
+          <input id="qty" name="qty" inputmode="numeric" required placeholder="0">
+          <div class="hint">អាចវាយលេខខ្មែរ ឬលេខឡាតាំង</div>
+        </div>
+        <div class="field" id="supplierField">
+          <label for="supplier">អ្នកផ្គត់ផ្គង់</label>
+          <input id="supplier" name="supplier" placeholder="ឈ្មោះអ្នកផ្គត់ផ្គង់">
+        </div>
+        <div class="field" id="reasonField" hidden>
+          <label for="reason">មូលហេតុ</label>
+          <select id="reason" name="reason">
+            <option>លក់</option><option>ខូច</option><option>ផុតកំណត់</option><option>កែតម្រូវ</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="note">ចំណាំ</label>
+          <input id="note" name="note" placeholder="លេខវិក្កយបត្រ…">
+        </div>
+        <button class="btn in block" type="submit" id="btnSubmit">រក្សាទុកស្តុកចូល</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>ប្រតិបត្តិការចុងក្រោយ</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>កាលបរិច្ឆេទ</th><th>ប្រភេទ</th><th>ទំនិញ</th><th class="num">បរិមាណ</th><th>អ្នកផ្គត់ផ្គង់ / មូលហេតុ</th></tr></thead>
+          <tbody id="recent"><tr><td colspan="5" class="empty">កំពុងផ្ទុក…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
+<script>
+  const $ = id => document.getElementById(id);
+  let type = new URLSearchParams(location.search).get('type') === 'out' ? 'out' : 'in';
+  let balances = [];
+
+  function setType(t) {
+    type = t;
+    document.querySelectorAll('.tabs button').forEach(b => {
+      const on = b.dataset.type === t;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on);
+    });
+    $('supplierField').hidden = t !== 'in';
+    $('reasonField').hidden = t !== 'out';
+    const btn = $('btnSubmit');
+    btn.className = `btn block ${t}`;
+    btn.textContent = t === 'in' ? 'រក្សាទុកស្តុកចូល' : 'រក្សាទុកស្តុកចេញ';
+    updatePreview();
+  }
+
+  function updatePreview() {
+    const p = balances.find(b => b.sku === $('sku').value);
+    if (!p) { $('preview').textContent = 'ជ្រើសទំនិញដើម្បីមើលសមតុល្យ'; return; }
+    const qty = Number(toLatinDigits($('qty').value)) || 0;
+    const after = type === 'in' ? p.balance + qty : p.balance - qty;
+    $('preview').innerHTML = `សមតុល្យបច្ចុប្បន្ន <b>${fmtNum(p.balance)}</b> ${esc(p.unit)} ${badge(p.status)}` +
+      (qty ? `<br>ក្រោយរក្សាទុក៖ <b style="color:${after < 0 ? 'var(--out)' : 'inherit'}">${fmtNum(after)}</b> ${esc(p.unit)}` +
+        (after < 0 ? ' — លើសសមតុល្យ' : '') : '');
+  }
+
+  async function loadProducts(keep) {
+    balances = await Api.balance();
+    const cur = keep || $('sku').value;
+    $('sku').innerHTML = '<option value="">— ជ្រើសទំនិញ —</option>' +
+      balances.map(p => `<option value="${esc(p.sku)}">${esc(p.sku)} · ${esc(p.name)} (${fmtNum(p.balance)})</option>`).join('');
+    $('sku').value = cur;
+    updatePreview();
+  }
+
+  async function loadRecent() {
+    const list = await Api.movements(15);
+    const names = Object.fromEntries(balances.map(p => [p.sku, p.name]));
+    $('recent').innerHTML = list.length ? list.map(m => `
+      <tr>
+        <td style="white-space:nowrap">${fmtDate(m.date)}</td>
+        <td>${m.type === 'in' ? '<span class="badge in-t">ចូល</span>' : '<span class="badge out-t">ចេញ</span>'}</td>
+        <td>${esc(names[m.sku] || m.sku)}</td>
+        <td class="num">${m.type === 'in' ? '+' : '−'}${fmtNum(m.qty)}</td>
+        <td>${esc(m.party)}</td>
+      </tr>`).join('') : '<tr><td colspan="5" class="empty">មិនទាន់មានប្រតិបត្តិការ</td></tr>';
+  }
+
+  document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => setType(b.dataset.type)));
+  $('sku').addEventListener('change', updatePreview);
+  $('qty').addEventListener('input', updatePreview);
+
+  $('moveForm').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const f = Object.fromEntries(new FormData(ev.target));
+    f.qty = Number(toLatinDigits(f.qty).trim());
+    if (!f.sku) { toast('សូមជ្រើសទំនិញ។', 'error'); return; }
+    if (!Number.isInteger(f.qty) || f.qty <= 0) { toast('បរិមាណមិនត្រឹមត្រូវ។ សូមបញ្ចូលចំនួនគត់ធំជាង ០។', 'error'); return; }
+    const btn = $('btnSubmit');
+    btn.disabled = true;
+    btn.textContent = 'កំពុងរក្សាទុក…';
+    try {
+      const r = type === 'in' ? await Api.stockIn(f) : await Api.stockOut(f);
+      toast(`ជោគជ័យ — សមតុល្យថ្មី ${fmtNum(r.balance)} (${r.status})`, 'success');
+      const sku = f.sku;
+      ev.target.reset();
+      await loadProducts(sku);
+      await loadRecent();
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      setType(type);
+    }
+  });
+
+  (async () => {
+    try {
+      await loadProducts(new URLSearchParams(location.search).get('sku') || '');
+      setType(type);
+      await loadRecent();
+    } catch (e) {
+      toast('មានកំហុស៖ ' + e.message, 'error');
+    }
+  })();
+</script>
+</body>
+</html>

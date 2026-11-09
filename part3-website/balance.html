@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="km">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>សមតុល្យស្តុក — គ្រប់គ្រងស្តុក</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="balance">
+<main>
+  <div class="page-head">
+    <div>
+      <h1>តារាងសមតុល្យស្តុក</h1>
+      <p>សមតុល្យ = ស្តុកចូលសរុប − ស្តុកចេញសរុប · <span id="updated"></span></p>
+    </div>
+    <button class="btn secondary" id="btnReload" type="button">↻ ផ្ទុកឡើងវិញ</button>
+  </div>
+
+  <div class="toolbar">
+    <input class="grow" id="q" type="search" placeholder="ស្វែងរកតាមឈ្មោះ ឬ SKU…" aria-label="ស្វែងរក">
+    <select id="st" aria-label="ស្ថានភាព" style="width:auto;min-width:170px">
+      <option value="">ស្ថានភាពទាំងអស់</option>
+      <option>អស់ស្តុក</option><option>ជិតអស់</option><option>គ្រប់គ្រាន់</option>
+    </select>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>SKU</th><th>ទំនិញ</th><th class="num">ចូល</th><th class="num">ចេញ</th>
+          <th class="num">សមតុល្យ</th><th class="num">អប្បបរមា</th><th>ស្ថានភាព</th><th class="num">តម្លៃ</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="rows"><tr><td colspan="9" class="empty">កំពុងផ្ទុក…</td></tr></tbody>
+      <tfoot><tr><td colspan="2">សរុប</td><td class="num" id="tIn"></td><td class="num" id="tOut"></td><td class="num" id="tBal"></td><td></td><td></td><td class="num" id="tVal"></td><td></td></tr></tfoot>
+    </table>
+  </div>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
+<script>
+  const $ = id => document.getElementById(id);
+  let all = [];
+  const order = { 'អស់ស្តុក': 0, 'ជិតអស់': 1, 'គ្រប់គ្រាន់': 2 };
+  const barColor = { out: 'var(--out)', low: 'var(--low)', ok: 'var(--ok)' };
+
+  function render() {
+    const q = $('q').value.trim().toLowerCase();
+    const st = $('st').value;
+    const list = all
+      .filter(p => (!st || p.status === st) && (!q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)))
+      .sort((a, b) => order[a.status] - order[b.status] || a.sku.localeCompare(b.sku));
+
+    $('rows').innerHTML = list.length ? list.map(p => {
+      const cls = statusClass(p.status);
+      const pct = Math.max(0, Math.min(100, p.minStock ? (p.balance / (p.minStock * 2)) * 100 : 100));
+      const action = cls === 'ok' ? '' :
+        `<a class="btn secondary" style="min-height:36px;padding:.25rem .7rem;font-size:14px" href="stock.html?type=in&sku=${encodeURIComponent(p.sku)}">បញ្ចូលស្តុក</a>`;
+      return `<tr>
+        <td class="sku">${esc(p.sku)}</td>
+        <td>${esc(p.name)}<div class="bar" title="សមតុល្យធៀបនឹង ២×អប្បបរមា"><span style="width:${pct}%;background:${barColor[cls]}"></span></div></td>
+        <td class="num">${fmtNum(p.totalIn)}</td>
+        <td class="num">${fmtNum(p.totalOut)}</td>
+        <td class="num"><b>${fmtNum(p.balance)}</b> <span style="color:var(--muted);font-size:14px">${esc(p.unit)}</span></td>
+        <td class="num">${fmtNum(p.minStock)}</td>
+        <td>${badge(p.status)}</td>
+        <td class="num">${fmtMoney(p.value)}</td>
+        <td>${action}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="9" class="empty">រកមិនឃើញទំនិញ</td></tr>';
+
+    const sum = k => list.reduce((s, p) => s + p[k], 0);
+    $('tIn').textContent = fmtNum(sum('totalIn'));
+    $('tOut').textContent = fmtNum(sum('totalOut'));
+    $('tBal').textContent = fmtNum(sum('balance'));
+    $('tVal').textContent = fmtMoney(sum('value'));
+  }
+
+  async function load() {
+    $('rows').innerHTML = '<tr><td colspan="9" class="empty">កំពុងផ្ទុក…</td></tr>';
+    try {
+      all = await Api.balance();
+      $('updated').textContent = 'ធ្វើបច្ចុប្បន្នភាព ' + fmtDate(new Date().toISOString());
+      render();
+    } catch (e) {
+      $('rows').innerHTML = `<tr><td colspan="9" class="empty">មានកំហុស៖ ${esc(e.message)}</td></tr>`;
+    }
+  }
+
+  const params = new URLSearchParams(location.search);
+  if (params.get('status')) $('st').value = params.get('status');
+  $('q').addEventListener('input', render);
+  $('st').addEventListener('change', render);
+  $('btnReload').addEventListener('click', load);
+  load();
+</script>
+</body>
+</html>

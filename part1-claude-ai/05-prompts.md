@@ -1,0 +1,24 @@
+# បញ្ជី Prompt ដែលបានប្រើ (១២ Prompt)
+
+> ប្រើក្នុង Claude Project «ជំនួយការគ្រប់គ្រងស្តុក» ដែលមាន Knowledge Base `01-knowledge-base.md`។
+
+| # | គោលបំណង | Prompt | លទ្ធផល |
+|---|---|---|---|
+| 1 | Knowledge Base | «ជួយរៀបចំ Knowledge Base សម្រាប់ហាងលក់ទំនិញប្រចាំថ្ងៃ មានព័ត៌មានអាជីវកម្ម តួនាទីបុគ្គលិក វាក្យសព្ទ ក្បួនស្តុក និងរចនាសម្ព័ន្ធ Google Sheet (Products, StockIn, StockOut, Balance)» | `01-knowledge-base.md` |
+| 2 | SOP | «សរសេរ SOP ស្តុកចូល និងស្តុកចេញ តាមទម្រង់៖ គោលបំណង វិសាលភាព ការទទួលខុសត្រូវ នីតិវិធីជាជំហាន ការជូនដំណឹង KPI។ ប្រើ Web App ជាឧបករណ៍កត់ត្រា» | `02-SOP-stock-in-out.md` |
+| 3 | Email ជូនដំណឹង | «សរសេរ Email ជូនដំណឹងស្តុកជិតអស់ទៅម្ចាស់ហាង ខ្លី ច្បាស់ មានតារាង SKU / សមតុល្យ / អប្បបរមា / បញ្ជាទិញណែនាំ និងសកម្មភាពដែលត្រូវធ្វើ» | `03-email-low-stock.md` |
+| 4 | Email អ្នកផ្គត់ផ្គង់ | «សរសេរ Email ស្នើបញ្ជាទិញទៅអ្នកផ្គត់ផ្គង់ ផ្អែកលើតារាងទំនិញជិតអស់ខាងលើ មានលេខ PO និងថ្ងៃដឹកជញ្ជូន» | `03-email-low-stock.md` (ផ្នែកទី ២) |
+| 5 | របាយការណ៍ប្រចាំខែ | «នេះជាទិន្នន័យ StockIn និង StockOut ខែតុលា [Paste]។ សរសេររបាយការណ៍ស្តុកប្រចាំខែ៖ សេចក្តីសង្ខេប តារាងតាមទំនិញ Top 3 បញ្ហា អនុសាសន៍» | `04-monthly-report.md` |
+| 6 | Sheet Formula | «ផ្តល់ Formula Google Sheet សម្រាប់ Sheet Balance៖ ទាញឈ្មោះដោយ XLOOKUP, សរុបចូល/ចេញដោយ SUMIFS, ស្ថានភាពដោយ IF (អស់ស្តុក / ជិតអស់ / គ្រប់គ្រាន់)» | `part2/sheet-structure.md` |
+| 7 | Apps Script | «សរសេរ Google Apps Script៖ doGet/doPost ជា API សម្រាប់ Web App, ការពារស្តុកចេញលើសសមតុល្យ, ផ្ញើ Email ពេលស្តុកជិតអស់, របាយការណ៍ប្រចាំខែ និង Trigger ស្វ័យប្រវត្តិ» | `part2/Code.gs` |
+| 8 | Pivot / Chart | «បន្ថែម Function ក្នុង Apps Script ដើម្បីបង្កើត PivotTable ស្តុកចេញតាម SKU និង Column Chart សមតុល្យតាមទំនិញ» | `setupSheets()` ក្នុង `Code.gs` |
+| 9 | Website | «បង្កើត Web App HTML/CSS/JS ៣ ទំព័រ (បញ្ជីទំនិញ, Form ស្តុកចូល/ចេញ, តារាងសមតុល្យ) ភាសាខ្មែរ Responsive ប្រើ Apps Script ជា Backend និងមាន Demo Mode ពេលមិនទាន់ភ្ជាប់» | `part3-website/` |
+| 10 | Debug CORS | «Web App fetch ទៅ Apps Script ជួប CORS error ពេល POST JSON។ ពន្យល់មូលហេតុ និងដំណោះស្រាយ» → ផ្ញើជា `text/plain` | `js/api.js` |
+| 11 | Proposal | «សរសេរ Proposal ១ ទំព័រ ស្នើម្ចាស់ហាងឲ្យប្រើប្រព័ន្ធនេះ៖ បញ្ហាបច្ចុប្បន្ន ដំណោះស្រាយ ថ្លៃដើម ($0 — Google + Netlify ឥតគិតថ្លៃ) និងផែនការអនុវត្ត ២ សប្តាហ៍» | ប្រើក្នុងបទបង្ហាញ |
+| 12 | វិភាគ Reorder | «ផ្អែកលើស្តុកចេញ ៤ សប្តាហ៍ចុងក្រោយ [Paste] គណនាល្បឿនលក់ប្រចាំសប្តាហ៍ ហើយស្នើ MinStock ថ្មីសម្រាប់ទំនិញនីមួយៗ (ស្តុកសុវត្ថិភាព ១.៥ សប្តាហ៍)» | អនុសាសន៍ក្នុងរបាយការណ៍ |
+| 13 | README | «សរសេរ README ពន្យល់របៀបដំឡើង Sheet, Deploy Apps Script, ដាក់ URL ក្នុង config.js និង Deploy ទៅ Netlify/Vercel ជាជំហាន» | `README.md` |
+
+## គន្លឹះសរសេរ Prompt ដែលដំណើរការល្អ
+- ប្រាប់ **ទម្រង់លទ្ធផល** (តារាង, ជំហាន, ចំនួនពាក្យ)។
+- **Paste ទិន្នន័យពិត** ជំនួសការឲ្យ Claude ស្មាន។
+- សុំឲ្យ Claude **ប្រើវាក្យសព្ទពី Knowledge Base** ដើម្បីឲ្យឯកសារទាំងអស់ស៊ីគ្នា។
