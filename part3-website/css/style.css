@@ -37,10 +37,7 @@ a { color: inherit; }
   display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
 }
 .brand { display: flex; align-items: center; gap: .6rem; font-weight: 700; font-size: 1.1rem; text-decoration: none; }
-.brand .logo {
-  width: 34px; height: 34px; border-radius: 8px; background: var(--accent);
-  display: grid; place-items: center; font-size: 1.1rem;
-}
+.brand .logo { width: 34px; height: 34px; border-radius: 8px; display: block; }
 nav { display: flex; gap: .25rem; margin-left: auto; flex-wrap: wrap; }
 nav a {
   text-decoration: none; padding: .45rem .85rem; border-radius: 8px;

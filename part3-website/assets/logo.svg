@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ហាង ស្តុកល្អ">
+  <rect width="64" height="64" rx="14" fill="#1f2a44"/>
+  <path d="M32 11 51 20.5v22L32 53 13 42.5v-22Z" fill="#c8372d"/>
+  <path d="M32 11 51 20.5 32 30 13 20.5Z" fill="#e2574c"/>
+  <path d="M32 30v23" stroke="#1f2a44" stroke-opacity=".35" stroke-width="1.5"/>
+  <path d="m22.5 15.75 19 9.5v7" fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round"/>
+  <circle cx="47" cy="47" r="10" fill="#027a48" stroke="#1f2a44" stroke-width="2.5"/>
+  <path d="m42.5 47 3.2 3.2 6-6.4" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

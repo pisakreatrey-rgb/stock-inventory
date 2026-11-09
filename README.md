@@ -1,3 +1,5 @@
+<img src="part3-website/assets/logo.png" alt="ហាង ស្តុកល្អ" width="80">
+
 # Application គ្រប់គ្រងស្តុក (Stock & Inventory) — សម្រាប់ហាង / ឃ្លាំង
 
 គម្រោងមាន ៣ ផ្នែក ដែលប្រើប្រធានបទតែមួយ៖ **ការគ្រប់គ្រងស្តុកចូល–ចេញ របស់ «ហាង ស្តុកល្អ»**។
@@ -15,7 +17,7 @@
 │   ├── 02-SOP-stock-in-out.md       SOP ស្តុកចូល/ចេញ
 │   ├── 03-email-low-stock.md        Email ជូនដំណឹងស្តុកជិតអស់ + Email បញ្ជាទិញ
 │   ├── 04-monthly-report.md         របាយការណ៍ស្តុកប្រចាំខែ
-│   └── 05-prompts.md                បញ្ជី Prompt ១៣
+│   └── 05-prompts.md                Prompt Log ១៧
 ├── part2-google-sheets/      ផ្នែកទី ២ — Google Sheet (Database) + Apps Script
 │   ├── Code.gs                      API + Email + Trigger + Setup (Formula/Pivot/Chart)
 │   └── sheet-structure.md           រចនាសម្ព័ន្ធ Sheet និង Formula
@@ -23,6 +25,7 @@
     ├── index.html                   បញ្ជីទំនិញ + KPI + បន្ថែមទំនិញ
     ├── stock.html                   Form ស្តុកចូល/ចេញ + ប្រតិបត្តិការចុងក្រោយ
     ├── balance.html                 តារាងសមតុល្យ + តម្រង + សរុប
+    ├── assets/logo.svg · logo.png   Logo ហាង (ប្រើក្នុង Web App, Sheet, ឯកសារ)
     ├── css/style.css
     └── js/config.js · api.js · common.js
 ```
@@ -30,7 +33,7 @@
 ## ត្រូវនឹងតម្រូវការអប្បបរមា
 | ផ្នែក | តម្រូវការ | ក្នុងគម្រោងនេះ |
 |---|---|---|
-| ១ Claude AI | Project + Knowledge Base · ឯកសារ ≥ ២ · Prompt ≥ ១០ | Knowledge Base + SOP + Email ២ + Report · Prompt ១៣ |
+| ១ Claude AI | Project + Knowledge Base · ឯកសារ ≥ ២ · Prompt ≥ ១០ | Knowledge Base + SOP + Email ២ + Report · Prompt ១៧ |
 | ២ Sheets | Formula (XLOOKUP/SUMIFS/IF) + Pivot ឬ Chart ≥ ១ + Apps Script | Sheet Balance ប្រើ XLOOKUP/SUMIFS/IF · PivotTable + Column Chart · Apps Script Email/API |
 | ៣ Website | ≥ ៣ ទំព័រ · Responsive · Live URL · Git repo | ៣ ទំព័រ · Responsive (375px+) · Vercel Live URL · GitHub repo (ខាងលើ) |
 
@@ -46,7 +49,8 @@
 1. បង្កើត Google Sheet ថ្មី → **Extensions → Apps Script**។
 2. លុបកូដដើម → Paste `part2-google-sheets/Code.gs` → Save។
 3. ជ្រើស Function **`setupSheets`** → **Run** → អនុញ្ញាត Permission។
-   បង្កើត Sheet ទាំងអស់ + ទិន្នន័យគំរូ ១០ មុខ + Formula + PivotTable + Chart។
+   បង្កើត Sheet ទាំងអស់ + ទិន្នន័យគំរូ **២០ មុខ** (StockIn ២១ ជួរ · StockOut ២៦ ជួរ) + Formula + PivotTable + Chart + Logo។
+   > Sheet ដែលមានទិន្នន័យ ១០ មុខរួចហើយ៖ Menu **📦 ស្តុក → បន្ថែមទិន្នន័យគំរូ (២០ មុខ)** (ឬ Run `seedExtraData`) ហើយ **ដាក់ Logo ក្នុង Sheet Balance**។
 4. ក្នុង Sheet **Settings** ពិនិត្យ `AlertEmail` (Email ដែលទទួលការជូនដំណឹង)។
 5. Run **`createTriggers`** ម្តង → Email ប្រចាំថ្ងៃ 8:00 + របាយការណ៍ថ្ងៃទី 1។
 6. សាកល្បង៖ Run **`checkLowStock`** → ពិនិត្យ Inbox។

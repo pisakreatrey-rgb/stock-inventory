@@ -1,3 +1,5 @@
+<img src="../part3-website/assets/logo.png" alt="ហាង ស្តុកល្អ" width="64">
+
 # SOP — នីតិវិធីស្តុកចូល និងស្តុកចេញ
 
 | លេខឯកសារ | SOP-INV-001 |

@@ -5,7 +5,7 @@
 ## Sheets
 | Sheet | Columns | តួនាទី |
 |---|---|---|
-| **Products** | SKU · Name · Category · Unit · Price · MinStock | បញ្ជីទំនិញ |
+| **Products** | SKU · Name · Category · Unit · Price · MinStock | បញ្ជីទំនិញ (២០ មុខ) |
 | **StockIn** | ID · Date · SKU · Qty · Supplier · Note | ប្រតិបត្តិការស្តុកចូល |
 | **StockOut** | ID · Date · SKU · Qty · Reason · Note | ប្រតិបត្តិការស្តុកចេញ |
 | **Balance** | SKU · Name · TotalIn · TotalOut · Balance · MinStock · Status · Value | សមតុល្យ (Formula) + Chart |
@@ -48,3 +48,5 @@ Conditional formatting៖ ក្រហម = អស់ស្តុក · លឿ�
 | `sendMonthlyReport` | Trigger ថ្ងៃទី 1 រាល់ខែ 8:00 | របាយការណ៍ខែមុន (ចូល/ចេញ/សមតុល្យ/Top 3) |
 | `createTriggers` | Run ម្តង | បង្កើត Trigger ទាំងពីរ |
 | `onOpen` | បើក Sheet | Menu «📦 ស្តុក» |
+| `seedExtraData` | Run ម្តង (Menu) | បន្ថែមទំនិញ P011–P020 + ប្រតិបត្តិការ 20/10–07/11 (រំលងជួរដែលមានរួច) |
+| `insertLogo` | `setupSheets` ឬ Menu | ដាក់ Logo ហាងលើ Sheet Balance |

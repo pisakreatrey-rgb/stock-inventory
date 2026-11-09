@@ -1,3 +1,5 @@
+<img src="../part3-website/assets/logo.png" alt="ហាង ស្តុកល្អ" width="64">
+
 # Knowledge Base — ហាង ស្តុកល្អ (Stock & Inventory)
 
 ## ១. ព័ត៌មានអាជីវកម្ម
