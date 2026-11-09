@@ -30,6 +30,7 @@ const HEADERS = {
 
 const STATUS = { OUT: 'អស់ស្តុក', LOW: 'ជិតអស់', OK: 'គ្រប់គ្រាន់' };
 const BALANCE_ROWS = 500; // ចំនួនជួរ Formula ក្នុង Sheet Balance
+const LOGO_URL = 'https://stock-inventory-part3-website.vercel.app/assets/logo.png';
 
 /* ============================== MENU ============================== */
 
@@ -40,6 +41,8 @@ function onOpen() {
     .addItem('ផ្ញើរបាយការណ៍ខែមុន', 'sendMonthlyReport')
     .addSeparator()
     .addItem('ដំឡើង Sheet (លើកដំបូង)', 'setupSheets')
+    .addItem('បន្ថែមទិន្នន័យគំរូ (២០ មុខ)', 'seedExtraData')
+    .addItem('ដាក់ Logo ក្នុង Sheet Balance', 'insertLogo')
     .addItem('បង្កើត Trigger ស្វ័យប្រវត្តិ', 'createTriggers')
     .addToUi();
 }
@@ -415,7 +418,7 @@ function setupSheets() {
     .addRange(bal.getRange('B1:B' + n))
     .addRange(bal.getRange('E1:F' + n))
     .setOption('title', 'សមតុល្យ vs ស្តុកអប្បបរមា')
-    .setPosition(2, 10, 0, 0)
+    .setPosition(7, 10, 0, 0)
     .build());
 
   // PivotTable — ស្តុកចេញសរុបតាម SKU និងមូលហេតុ
@@ -427,7 +430,15 @@ function setupSheets() {
   pivot.addColumnGroup(5); // Reason
   pivot.addPivotValue(4, SpreadsheetApp.PivotTableSummarizeFunction.SUM); // Qty
 
+  try { insertLogo(); } catch (err) { Logger.log('Logo: ' + err); }
   ss.setActiveSheet(bal);
+}
+
+/** ដាក់ Logo ហាង (PNG ពី Web App) នៅជ្រុងខាងលើ Sheet Balance ពីលើ Chart */
+function insertLogo() {
+  const bal = sheet_(SHEETS.BALANCE);
+  bal.getImages().forEach(img => img.remove());
+  bal.insertImage(LOGO_URL, 10, 1).setWidth(90).setHeight(90);
 }
 
 function seedSampleData_() {
@@ -475,4 +486,78 @@ function seedSampleData_() {
     ['OUT-10', d(1), 'P010', 18, 'លក់', ''],
   ];
   sheet_(SHEETS.OUT).getRange(2, 1, outs.length, 6).setValues(outs);
+  seedExtraData();
+}
+
+/* ===================== ទិន្នន័យបន្ថែម (ទំនិញ ២០ មុខ) ===================== */
+
+/** ទំនិញ P011–P020 និងប្រតិបត្តិការ 20/10/2026 – 07/11/2026 (ម៉ោង Phnom Penh) */
+const EXTRA_DATA = {
+  products: [
+    ['P011', 'ភេសជ្ជៈ Sting 330ml', 'ភេសជ្ជៈ', 'កំប៉ុង', 0.50, 24],
+    ['P012', 'កាហ្វេ Nescafé 3in1 (៣០ កញ្ចប់)', 'ភេសជ្ជៈ', 'ប្រអប់', 3.80, 6],
+    ['P013', 'ត្រីខកំប៉ុង', 'អាហារ', 'កំប៉ុង', 1.20, 12],
+    ['P014', 'ពងមាន់ (ក្តារ ៣០ គ្រាប់)', 'អាហារ', 'ក្តារ', 3.50, 5],
+    ['P015', 'ទឹកស៊ីអ៊ីវ', 'គ្រឿងទេស', 'ដប', 1.30, 10],
+    ['P016', 'អំបិល 500g', 'គ្រឿងទេស', 'កញ្ចប់', 0.40, 10],
+    ['P017', 'ម្សៅប៊ីចេង 454g', 'គ្រឿងទេស', 'កញ្ចប់', 1.60, 8],
+    ['P018', 'ថ្នាំដុសធ្មេញ Colgate', 'អនាម័យ', 'ប្រអប់', 1.40, 8],
+    ['P019', 'ម្សៅសាប៊ូបោកខោអាវ 1kg', 'អនាម័យ', 'កញ្ចប់', 2.30, 6],
+    ['P020', 'ទឹកលាងចាន Sunlight', 'អនាម័យ', 'ដប', 1.10, 8],
+  ],
+  stockIn: [
+    ['IN-11', '2026-10-20T09:00:00+07:00', 'P011', 96, 'ផ្សារដើមគរ', 'INV-1011'],
+    ['IN-12', '2026-10-21T09:00:00+07:00', 'P012', 12, 'Nestlé Cambodia', 'INV-1012'],
+    ['IN-13', '2026-10-21T09:00:00+07:00', 'P013', 48, 'ផ្សារដើមគរ', ''],
+    ['IN-14', '2026-10-22T09:00:00+07:00', 'P014', 15, 'កសិដ្ឋានពងមាន់ សុខហេង', ''],
+    ['IN-15', '2026-10-22T09:00:00+07:00', 'P015', 24, 'ផ្សារដើមគរ', ''],
+    ['IN-16', '2026-10-23T09:00:00+07:00', 'P016', 30, 'ផ្សារដើមគរ', ''],
+    ['IN-17', '2026-10-23T09:00:00+07:00', 'P017', 20, 'ផ្សារដើមគរ', ''],
+    ['IN-18', '2026-10-24T09:00:00+07:00', 'P018', 24, 'Colgate-Palmolive', 'INV-1018'],
+    ['IN-19', '2026-10-24T09:00:00+07:00', 'P019', 12, 'Unilever', 'INV-1019'],
+    ['IN-20', '2026-10-24T09:00:00+07:00', 'P020', 24, 'Unilever', 'INV-1020'],
+    ['IN-21', '2026-10-31T09:00:00+07:00', 'P014', 10, 'កសិដ្ឋានពងមាន់ សុខហេង', ''],
+  ],
+  stockOut: [
+    ['OUT-11', '2026-10-25T17:00:00+07:00', 'P011', 40, 'លក់', ''],
+    ['OUT-12', '2026-10-26T17:00:00+07:00', 'P014', 9, 'លក់', ''],
+    ['OUT-13', '2026-10-27T17:00:00+07:00', 'P012', 5, 'លក់', ''],
+    ['OUT-14', '2026-10-28T17:00:00+07:00', 'P013', 20, 'លក់', ''],
+    ['OUT-15', '2026-10-28T17:00:00+07:00', 'P015', 9, 'លក់', ''],
+    ['OUT-16', '2026-10-29T17:00:00+07:00', 'P014', 4, 'ខូច', 'ពងបែកពេលដឹកជញ្ជូន'],
+    ['OUT-17', '2026-10-30T17:00:00+07:00', 'P016', 12, 'លក់', ''],
+    ['OUT-18', '2026-10-30T17:00:00+07:00', 'P017', 7, 'លក់', ''],
+    ['OUT-19', '2026-10-31T17:00:00+07:00', 'P018', 10, 'លក់', ''],
+    ['OUT-20', '2026-10-31T17:00:00+07:00', 'P019', 7, 'លក់', ''],
+    ['OUT-21', '2026-10-31T17:00:00+07:00', 'P020', 10, 'លក់', ''],
+    ['OUT-22', '2026-11-03T17:00:00+07:00', 'P011', 38, 'លក់', ''],
+    ['OUT-23', '2026-11-04T17:00:00+07:00', 'P014', 12, 'លក់', ''],
+    ['OUT-24', '2026-11-05T17:00:00+07:00', 'P012', 4, 'លក់', ''],
+    ['OUT-25', '2026-11-06T17:00:00+07:00', 'P020', 6, 'លក់', ''],
+    ['OUT-26', '2026-11-07T17:00:00+07:00', 'P016', 1, 'កែតម្រូវ', 'រាប់ស្តុកថ្ងៃសៅរ៍'],
+  ],
+};
+
+/**
+ * បន្ថែមទំនិញ P011–P020 និងប្រតិបត្តិការរបស់វា ទៅ Sheet ដែលមានស្រាប់។
+ * Run ម្តងពី Menu «📦 ស្តុក» → «បន្ថែមទិន្នន័យគំរូ (២០ មុខ)»។ Run ម្តងទៀតក៏គ្មានបញ្ហា
+ * ព្រោះវារំលង SKU និង ID ដែលមានរួចហើយ។
+ */
+function seedExtraData() {
+  const appendMissing = (sheetName, rows, toRow) => {
+    const sh = sheet_(sheetName);
+    const have = new Set(rows_(sheetName).map(r => String(r[HEADERS[sheetName][0]])));
+    const add = rows.filter(r => !have.has(String(r[0]))).map(toRow);
+    if (add.length) {
+      sh.getRange(sh.getLastRow() + 1, 1, add.length, add[0].length).setValues(add);
+    }
+    return add.length;
+  };
+  const mv = r => [r[0], new Date(r[1]), r[2], r[3], r[4], r[5]];
+  sheet_(SHEETS.IN).getRange('F:F').setNumberFormat('@');
+  sheet_(SHEETS.OUT).getRange('F:F').setNumberFormat('@');
+  const n = appendMissing(SHEETS.PRODUCTS, EXTRA_DATA.products, r => r.slice()) +
+    appendMissing(SHEETS.IN, EXTRA_DATA.stockIn, mv) +
+    appendMissing(SHEETS.OUT, EXTRA_DATA.stockOut, mv);
+  return n;
 }

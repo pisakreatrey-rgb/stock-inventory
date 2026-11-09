@@ -1,3 +1,5 @@
+<img src="../part3-website/assets/logo.png" alt="ហាង ស្តុកល្អ" width="64">
+
 # Email Template — ជូនដំណឹងស្តុកជិតអស់
 
 > Template នេះត្រូវបានប្រើក្នុង Apps Script (`checkLowStock()`)។ Claude អាចប្រើវាជាគំរូ ពេលសរសេរ Email ដោយដៃ។

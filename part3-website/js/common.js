@@ -43,7 +43,7 @@ function renderShell() {
   const header = document.createElement('header');
   header.innerHTML = `
     <div class="topbar"><div class="inner">
-      <a class="brand" href="index.html"><span class="logo" aria-hidden="true">📦</span>${esc(shop)}</a>
+      <a class="brand" href="index.html"><img class="logo" src="assets/logo.svg" alt="" width="34" height="34">${esc(shop)}</a>
       <nav aria-label="ម៉ឺនុយ">${links.map(([href, key, label]) =>
         `<a href="${href}" class="${key === page ? 'active' : ''}">${label}</a>`).join('')}</nav>
     </div></div>
