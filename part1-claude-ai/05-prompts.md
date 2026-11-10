@@ -1,6 +1,6 @@
 <img src="../part3-website/assets/logo.png" alt="ហាង ស្តុកល្អ" width="64">
 
-# Prompt Log — បញ្ជី Prompt ដែលបានប្រើ (២១ Prompt)
+# Prompt Log — បញ្ជី Prompt ដែលបានប្រើ (២២ Prompt)
 
 > ប្រើក្នុង Claude Project «ជំនួយការគ្រប់គ្រងស្តុក» ដែលមាន Knowledge Base `01-knowledge-base.md`។
 
@@ -27,6 +27,7 @@
 | 19 | Portfolio + Checkpoint | «ធ្វើ ចំណុចទី ២, ៥, ៦» | `portfolio.html`, `CHECKPOINTS.md`, README Badge, Social preview (`og-image.png`) |
 | 20 | វិភាគមុខងារដែលខ្វះ | «តើអ្នកគិតថា ការគ្រប់គ្រង stock in stock out ប៉ុណ្ណឹងគ្រប់គ្រាន់ហើយមានទេ តើនៅខ្វះអ្វីទៀត ដូចជា របាយការណ៍ តាមថ្ងៃខែឆ្នាំ ឬ ផ្ទាំង dashboard» | បញ្ជីចំណុចបន្ថែម ៩ ចំណុច តាមលំដាប់សំខាន់ |
 | 21 | Dashboard + របាយការណ៍ + PIN | «សូមធ្វើ១ដល់៦» | `dashboard.html` · `report.html` · `count.html` · Stock Card · Void · PIN (`Staff`) · Code.gs v2 |
+| 22 | ពិនិត្យចុងក្រោយ | «ក្រៅពី video demo យើងមានអស់ហើយត្រូវអត់?» + រូបតារាងពិន្ទុ ១០០ | ពិនិត្យតាមតារាងពិន្ទុ → នៅខ្វះ Video, ថ្ងៃ/មតិគ្រូក្នុង Checkpoint, រូបថតអេក្រង់ · កែចំនួន Prompt ក្នុង README · Script Video (`docs/video-script.md`) |
 
 > **ចំណាំ៖** Prompt #11 សរសេរ «Netlify» ព្រោះពេលនោះគ្រោងប្រើ Netlify។ ក្រោយមកបាន Deploy លើ **Vercel** វិញ (ឥតគិតថ្លៃដូចគ្នា)។
 
