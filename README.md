@@ -31,7 +31,7 @@
 │   ├── 02-SOP-stock-in-out.md       SOP ស្តុកចូល/ចេញ
 │   ├── 03-email-low-stock.md        Email ជូនដំណឹងស្តុកជិតអស់ + Email បញ្ជាទិញ
 │   ├── 04-monthly-report.md         របាយការណ៍ស្តុកប្រចាំខែ
-│   └── 05-prompts.md                Prompt Log ២១
+│   └── 05-prompts.md                Prompt Log ២២
 ├── part2-google-sheets/      ផ្នែកទី ២ — Google Sheet (Database) + Apps Script
 │   ├── Code.gs                      API + PIN + Void + រាប់ស្តុក + Email + Trigger + Setup
 │   └── sheet-structure.md           រចនាសម្ព័ន្ធ Sheet និង Formula
@@ -52,7 +52,7 @@
 ## ត្រូវនឹងតម្រូវការអប្បបរមា
 | ផ្នែក | តម្រូវការ | ក្នុងគម្រោងនេះ |
 |---|---|---|
-| ១ Claude AI | Project + Knowledge Base · ឯកសារ ≥ ២ · Prompt ≥ ១០ | Knowledge Base + SOP + Email ២ + Report · Prompt ១៧ |
+| ១ Claude AI | Project + Knowledge Base · ឯកសារ ≥ ២ · Prompt ≥ ១០ | Knowledge Base + SOP + Email ២ + Report · Prompt ២២ |
 | ២ Sheets | Formula (XLOOKUP/SUMIFS/IF) + Pivot ឬ Chart ≥ ១ + Apps Script | Sheet Balance ប្រើ XLOOKUP/SUMIFS/IF · PivotTable + Column Chart · Apps Script Email/API |
 | ៣ Website | ≥ ៣ ទំព័រ · Responsive · Live URL · Git repo | ៧ ទំព័រ (រួម Dashboard, របាយការណ៍, Portfolio) · Responsive (375px+) · Vercel Live URL · GitHub repo (ខាងលើ) |
 
